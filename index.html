@@ -11,6 +11,9 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            /* Центрируем по горизонтали */
+            justify-content: center;
+            /* Добавим центрирование по вертикали */
             background-color: #f0f0f0;
             margin: 0;
             padding: 0;
@@ -22,27 +25,39 @@
             width: 100%;
             max-width: 400px;
             flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            /* Центрируем содержимое хедера */
         }
 
         #gameContainer {
             flex: 1;
             width: 100%;
             max-width: 400px;
-            min-height: 0; /* Важно для flex-элементов */
+            min-height: 0;
             position: relative;
             overflow: hidden;
+            display: flex;
+            justify-content: center;
+            /* Центрируем canvas по горизонтали */
+            align-items: center;
+            /* Центрируем canvas по вертикали */
         }
 
         #gameCanvas {
-            width: 100%;
-            height: 100%;
             display: block;
+            /* Убираем фиксированные width/height в стилях, будем управлять через JS */
         }
 
         .footer {
             width: 100%;
             max-width: 400px;
             flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            /* Центрируем содержимое футера */
         }
 
         #controls {
@@ -52,6 +67,8 @@
             justify-content: space-between;
             padding: 10px;
             box-sizing: border-box;
+            max-width: 400px;
+            /* Ограничиваем ширину контролов */
         }
 
         button {
@@ -105,11 +122,11 @@
             <div id="timerBar"></div>
         </div>
     </div>
-    
+
     <div id="gameContainer">
         <canvas id="gameCanvas" width="400" height="600"></canvas>
     </div>
-    
+
     <div class="footer">
         <div id="controls">
             <button id="leftButton">← Left</button>
@@ -206,30 +223,32 @@
             const header = document.querySelector('.header');
             const footer = document.querySelector('.footer');
             const gameContainer = document.getElementById('gameContainer');
-            
+
             // Вычисляем доступную высоту для игрового поля
             const availableHeight = window.innerHeight - header.offsetHeight - footer.offsetHeight;
-            
+
             // Устанавливаем размеры контейнера
             gameContainer.style.height = `${availableHeight}px`;
-            
+
             // Рассчитываем пропорции canvas
-            const targetRatio = 2 / 3; // Соотношение ширины к высоте
-            let width = Math.min(400, window.innerWidth);
-            let height = width / targetRatio;
-            
-            // Если высота больше доступной, уменьшаем
-            if (height > availableHeight) {
-                height = availableHeight;
-                width = height * targetRatio;
+            const targetRatio = canvas.height / canvas.width; // Используем исходное соотношение 600/400 = 1.5
+            const maxWidth = Math.min(400, window.innerWidth);
+            const maxHeight = availableHeight;
+
+            // Вычисляем размеры с сохранением пропорций
+            let width = maxWidth;
+            let height = width * targetRatio;
+
+            if (height > maxHeight) {
+                height = maxHeight;
+                width = height / targetRatio;
             }
-            
-            // Устанавливаем размеры canvas
+
+            // Центрируем canvas внутри контейнера
             canvas.style.width = `${width}px`;
             canvas.style.height = `${height}px`;
-            canvas.width = width;
-            canvas.height = height;
 
+            // Обновляем игровые настройки
             updateGameSettings();
         }
 
