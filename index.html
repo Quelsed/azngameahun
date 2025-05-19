@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>LumberJack</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
         body {
             overflow: hidden;
-            height: 100px;
+            height: 100%;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -16,6 +17,7 @@
             touch-action: manipulation;
             font-family: Arial, sans-serif;
         }
+
         #gameContainer {
             position: relative;
             width: 100%;
@@ -24,6 +26,7 @@
             justify-content: center;
             align-items: center;
         }
+
         #gameCanvas {
             width: 100%;
             height: 100%;
@@ -31,6 +34,7 @@
             max-width: 400px;
             max-height: 600px;
         }
+
         #controls {
             display: flex;
             gap: 10px;
@@ -40,6 +44,7 @@
             padding: 10px;
             box-sizing: border-box;
         }
+
         button {
             padding: 12px 20px;
             font-size: 16px;
@@ -51,17 +56,20 @@
             flex-grow: 1;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
+
         #startButton {
             background-color: #2ecc71;
             margin: 10px 0;
             width: 100%;
             max-width: 400px;
         }
+
         #score {
             font-size: 20px;
             font-weight: bold;
             margin: 5px 0;
         }
+
         #timerContainer {
             width: 100%;
             max-width: 400px;
@@ -71,12 +79,14 @@
             margin: 5px 0;
             overflow: hidden;
         }
+
         #timerBar {
             height: 100%;
             width: 100%;
             background-color: #e74c3c;
             transition: width 0.1s linear;
         }
+
         .info-container {
             width: 100%;
             max-width: 400px;
@@ -88,6 +98,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="info-container">
         <button id="startButton">Start Game</button>
@@ -105,6 +116,27 @@
     </div>
 
     <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Блокируем масштабирование на мобильных устройствах
+            document.addEventListener('touchmove', function (e) {
+                if (e.scale !== 1) {
+                    e.preventDefault();
+                }
+            }, { passive: false });
+
+            // Инициализация
+            resizeCanvas();
+
+            // Для GitHub Pages может потребоваться дополнительный ресайз
+            setTimeout(resizeCanvas, 100);
+            setTimeout(resizeCanvas, 1000);
+        });
+
+        window.addEventListener('resize', function () {
+            clearTimeout(this.resizeTimeout);
+            this.resizeTimeout = setTimeout(resizeCanvas, 200);
+        });
+
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const startButton = document.getElementById('startButton');
@@ -155,7 +187,7 @@
             return new Promise((resolve, reject) => {
                 let loaded = 0;
                 const total = Object.keys(IMAGE_PATHS).length;
-                
+
                 for (const key in IMAGE_PATHS) {
                     const img = new Image();
                     img.src = IMAGE_PATHS[key];
@@ -179,24 +211,29 @@
             const container = document.getElementById('gameContainer');
             const containerWidth = container.clientWidth;
             const containerHeight = container.clientHeight;
-            
-            // Сохраняем соотношение сторон 2:3 (400:600)
-            const targetRatio = 2/3;
-            let width = containerWidth;
+
+            // Для GitHub Pages добавляем проверку на минимальный размер
+            const minWidth = Math.min(400, containerWidth);
+            const minHeight = Math.min(600, containerHeight);
+
+            const targetRatio = 2 / 3;
+            let width = minWidth;
             let height = width / targetRatio;
-            
-            if (height > containerHeight) {
-                height = containerHeight;
+
+            if (height > minHeight) {
+                height = minHeight;
                 width = height * targetRatio;
             }
-            
+
+            // Устанавливаем абсолютные размеры canvas
+            canvas.style.width = `${width}px`;
+            canvas.style.height = `${height}px`;
             canvas.width = width;
             canvas.height = height;
-            
-            // Обновляем размеры элементов
+
             updateGameSettings();
         }
-        
+
         let isGameRunning = false;
         let score = 0;
         let playerSide = 'right';
@@ -208,7 +245,7 @@
         const BASE_SPEED = 0.003;
         const TIME_BOOST = 0.5;
         const MAX_TIME = 1.0;
-        
+
         // Настройки игры
         let BRANCH_WIDTH;
         let BRANCH_HEIGHT;
@@ -216,10 +253,10 @@
         let PLAYER_SIZE;
         let LEVEL_HEIGHT;
         let VISIBLE_LEVELS = 2;
-        
+
         function updateGameSettings() {
             const scaleFactor = canvas.width / 400;
-            
+
             BRANCH_WIDTH = 160 * scaleFactor;
             BRANCH_HEIGHT = 80 * scaleFactor;
             TREE_WIDTH = 100 * scaleFactor;
@@ -230,9 +267,9 @@
         function updateTimer() {
             speedMultiplier = 1.0 + Math.floor(score / 20) * 0.5;
             timeLeft -= BASE_SPEED * speedMultiplier;
-            
+
             timerBar.style.width = `${Math.max(0, timeLeft) * 100}%`;
-            
+
             if (timeLeft < 0.3) {
                 timerBar.style.backgroundColor = '#e74c3c';
             } else if (timeLeft < 0.6) {
@@ -240,12 +277,12 @@
             } else {
                 timerBar.style.backgroundColor = '#2ecc71';
             }
-            
+
             if (timeLeft <= 0) {
                 gameOver();
                 return;
             }
-            
+
             timerId = requestAnimationFrame(updateTimer);
         }
 
@@ -259,7 +296,7 @@
             if (images.tree) {
                 ctx.drawImage(
                     images.tree,
-                    canvas.width/2 - TREE_WIDTH/2,
+                    canvas.width / 2 - TREE_WIDTH / 2,
                     0,
                     TREE_WIDTH,
                     canvas.height
@@ -267,22 +304,22 @@
             } else {
                 ctx.fillStyle = '#8b4513';
                 ctx.fillRect(
-                    canvas.width/2 - TREE_WIDTH/2, 
-                    0, 
-                    TREE_WIDTH, 
+                    canvas.width / 2 - TREE_WIDTH / 2,
+                    0,
+                    TREE_WIDTH,
                     canvas.height
                 );
             }
         }
 
         function drawPlayer() {
-            const x = playerSide === 'left' ? 
-                canvas.width/2 - TREE_WIDTH/2 - PLAYER_SIZE : 
-                canvas.width/2 + TREE_WIDTH/2;
+            const x = playerSide === 'left' ?
+                canvas.width / 2 - TREE_WIDTH / 2 - PLAYER_SIZE :
+                canvas.width / 2 + TREE_WIDTH / 2;
             const y = canvas.height - PLAYER_SIZE - 20;
-            
+
             const img = playerSide === 'left' ? images.playerLeft : images.playerRight;
-            
+
             if (img) {
                 ctx.drawImage(img, x, y, PLAYER_SIZE, PLAYER_SIZE);
             } else {
@@ -294,13 +331,13 @@
         function drawBranches() {
             branches.forEach(branch => {
                 const branchY = branch.y + treeScroll;
-                if(branchY < canvas.height && branchY > -BRANCH_HEIGHT) {
+                if (branchY < canvas.height && branchY > -BRANCH_HEIGHT) {
                     const img = branch.side === 'left' ? images.branchLeft : images.branchRight;
-                    
+
                     if (img) {
-                        const x = branch.side === 'left' ? 
-                            canvas.width/2 - TREE_WIDTH/2 - BRANCH_WIDTH : 
-                            canvas.width/2 + TREE_WIDTH/2;
+                        const x = branch.side === 'left' ?
+                            canvas.width / 2 - TREE_WIDTH / 2 - BRANCH_WIDTH :
+                            canvas.width / 2 + TREE_WIDTH / 2;
                         ctx.drawImage(
                             img,
                             x,
@@ -311,9 +348,9 @@
                     } else {
                         ctx.fillStyle = '#2ecc71';
                         ctx.fillRect(
-                            branch.side === 'left' ? 
-                                canvas.width/2 - TREE_WIDTH/2 - BRANCH_WIDTH : 
-                                canvas.width/2 + TREE_WIDTH/2,
+                            branch.side === 'left' ?
+                                canvas.width / 2 - TREE_WIDTH / 2 - BRANCH_WIDTH :
+                                canvas.width / 2 + TREE_WIDTH / 2,
                             branchY,
                             BRANCH_WIDTH,
                             BRANCH_HEIGHT
@@ -325,18 +362,18 @@
 
         function generateSafeBranch() {
             const dangerousSides = new Set();
-            
+
             branches.forEach(branch => {
-                if(branch.y === -LEVEL_HEIGHT) {
+                if (branch.y === -LEVEL_HEIGHT) {
                     dangerousSides.add(branch.side);
                 }
             });
 
-            if(dangerousSides.size >= 2) return 'left';
-            if(dangerousSides.size === 1) return dangerousSides.has('left') ? 'right' : 'left';
+            if (dangerousSides.size >= 2) return 'left';
+            if (dangerousSides.size === 1) return dangerousSides.has('left') ? 'right' : 'left';
 
             const lastTwo = branches.slice(-2).map(b => b.side);
-            if(lastTwo.length === 2 && lastTwo[0] === lastTwo[1]) {
+            if (lastTwo.length === 2 && lastTwo[0] === lastTwo[1]) {
                 return lastTwo[0] === 'left' ? 'right' : 'left';
             }
 
@@ -362,14 +399,14 @@
             treeScroll += LEVEL_HEIGHT;
             addTime();
 
-            if(branches.every(b => b.y !== -treeScroll)) {
+            if (branches.every(b => b.y !== -treeScroll)) {
                 branches.push({
                     side: generateSafeBranch(),
                     y: -treeScroll - LEVEL_HEIGHT
                 });
             }
 
-            if(checkCollision()) {
+            if (checkCollision()) {
                 gameOver();
                 return;
             }
@@ -395,7 +432,7 @@
                 await loadImages();
                 loadBackgroundImage();
             }
-            
+
             isGameRunning = true;
             score = 0;
             timeLeft = MAX_TIME;
@@ -408,7 +445,7 @@
             timerBar.style.backgroundColor = '#2ecc71';
             startButton.disabled = true;
 
-            for(let i = 0; i < VISIBLE_LEVELS; i++) {
+            for (let i = 0; i < VISIBLE_LEVELS; i++) {
                 branches.push({
                     side: generateSafeBranch(),
                     y: -i * LEVEL_HEIGHT
@@ -434,28 +471,28 @@
             drawTree();
             drawBranches();
             drawPlayer();
-            if(isGameRunning) requestAnimationFrame(gameLoop);
+            if (isGameRunning) requestAnimationFrame(gameLoop);
         }
 
         // Обработчики событий
         leftButton.addEventListener('click', () => handleMove('left'));
         rightButton.addEventListener('click', () => handleMove('right'));
         startButton.addEventListener('click', startGame);
-        
+
         // Сенсорное управление
         let touchStartX = 0;
-        
+
         canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
             touchStartX = e.touches[0].clientX;
         });
-        
+
         canvas.addEventListener('touchend', (e) => {
             if (!isGameRunning) return;
-            
+
             const touchEndX = e.changedTouches[0].clientX;
             const diffX = touchEndX - touchStartX;
-            
+
             if (Math.abs(diffX) > 30) {
                 if (diffX > 0) {
                     handleMove('right');
@@ -464,21 +501,22 @@
                 }
             }
         });
-        
+
         // Обработка изменения размера
         window.addEventListener('resize', resizeCanvas);
         window.addEventListener('orientationchange', resizeCanvas);
-        
+
         // Инициализация
         resizeCanvas();
-        
+
         // Telegram Mini App расширение
         if (window.Telegram && window.Telegram.WebApp) {
             Telegram.WebApp.expand();
             Telegram.WebApp.enableClosingConfirmation();
-            
+
             // Можно использовать Telegram.WebApp.sendData для отправки результатов
         }
     </script>
 </body>
+
 </html>
