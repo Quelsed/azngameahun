@@ -6,7 +6,7 @@
     <style>
         body {
             overflow: hidden;
-            height: 100%;
+            height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -18,51 +18,57 @@
         }
         #gameContainer {
             position: relative;
-            margin: 10px;
             width: 100%;
-            max-width: 20%;
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
         #gameCanvas {
             width: 100%;
-            height: auto;
+            height: 100%;
             display: block;
+            max-width: 400px;
+            max-height: 600px;
         }
         #controls {
-            margin: 10px;
             display: flex;
             gap: 10px;
             width: 100%;
             max-width: 400px;
             justify-content: space-between;
+            padding: 10px;
+            box-sizing: border-box;
         }
         button {
-            padding: 15px 25px;
-            font-size: 18px;
+            padding: 12px 20px;
+            font-size: 16px;
             cursor: pointer;
             border: none;
-            border-radius: 10px;
+            border-radius: 8px;
             background-color: #3498db;
             color: white;
             flex-grow: 1;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
         #startButton {
             background-color: #2ecc71;
-            padding: 15px 30px;
             margin: 10px 0;
+            width: 100%;
+            max-width: 400px;
         }
         #score {
-            font-size: 24px;
+            font-size: 20px;
             font-weight: bold;
-            margin: 10px 0;
+            margin: 5px 0;
         }
         #timerContainer {
             width: 100%;
             max-width: 400px;
-            height: 20px;
+            height: 15px;
             background-color: #ddd;
-            border-radius: 10px;
-            margin: 10px 0;
+            border-radius: 8px;
+            margin: 5px 0;
             overflow: hidden;
         }
         #timerBar {
@@ -71,28 +77,24 @@
             background-color: #e74c3c;
             transition: width 0.1s linear;
         }
-        @media (max-height: 700px) {
-            #gameContainer {
-                max-width: 300px;
-            }
-            #controls button {
-                padding: 12px 20px;
-                font-size: 16px;
-            }
-            #startButton {
-                padding: 12px 24px;
-            }
-            #timerContainer {
-                height: 15px;
-            }
+        .info-container {
+            width: 100%;
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0 10px;
+            box-sizing: border-box;
         }
     </style>
 </head>
 <body>
-    <button id="startButton">Start Game</button>
-    <div id="score">Score: 0</div>
-    <div id="timerContainer">
-        <div id="timerBar"></div>
+    <div class="info-container">
+        <button id="startButton">Start Game</button>
+        <div id="score">Score: 0</div>
+        <div id="timerContainer">
+            <div id="timerBar"></div>
+        </div>
     </div>
     <div id="gameContainer">
         <canvas id="gameCanvas" width="400" height="600"></canvas>
@@ -111,14 +113,16 @@
         const leftButton = document.getElementById('leftButton');
         const rightButton = document.getElementById('rightButton');
 
-        // Пути к изображениям (замените на свои)
+        // Замените эти пути на реальные URL ваших изображений
         const IMAGE_PATHS = {
-            tree: 'tree.png',           // Изображение дерева
-            branchLeft: 'branchleft.png',  // Ветка слева
-            branchRight: 'branchright.png', // Ветка справа
-            playerLeft: 'ahunleft.png',   // Игрок слева
-            playerRight: 'ahunright.png'  // Игрок справа
+            tree: 'tree.png',
+            branchLeft: 'branchleft.png',
+            branchRight: 'branchright.png',
+            playerLeft: 'ahunleft.png',
+            playerRight: 'ahunright.png'
         };
+
+        const BACKGROUND_IMAGE_PATH = 'back3.jpg';
 
         // Загруженные изображения
         const images = {
@@ -128,7 +132,6 @@
             playerLeft: null,
             playerRight: null
         };
-        const BACKGROUND_IMAGE_PATH = 'back3.jpg';
         let backgroundImage = null;
 
         // Функция для загрузки фонового изображения
@@ -163,7 +166,6 @@
                     };
                     img.onerror = () => {
                         console.error(`Error loading image: ${IMAGE_PATHS[key]}`);
-                        // Если изображение не загрузилось, используем стандартные фигуры
                         images[key] = null;
                         loaded++;
                         if (loaded === total) resolve();
@@ -172,67 +174,71 @@
             });
         }
 
-        // Адаптация размера canvas под экран
+        // Адаптация размера canvas под контейнер
         function resizeCanvas() {
             const container = document.getElementById('gameContainer');
             const containerWidth = container.clientWidth;
-            const aspectRatio = 400 / 600; // исходное соотношение сторон
+            const containerHeight = container.clientHeight;
             
-            canvas.width = containerWidth;
-            canvas.height = containerWidth / aspectRatio;
+            // Сохраняем соотношение сторон 2:3 (400:600)
+            const targetRatio = 2/3;
+            let width = containerWidth;
+            let height = width / targetRatio;
             
-            // Обновляем размеры элементов при изменении размера canvas
+            if (height > containerHeight) {
+                height = containerHeight;
+                width = height * targetRatio;
+            }
+            
+            canvas.width = width;
+            canvas.height = height;
+            
+            // Обновляем размеры элементов
             updateGameSettings();
         }
         
         let isGameRunning = false;
         let score = 0;
         let playerSide = 'right';
-        let treeScroll = 0; // Скролл дерева
+        let treeScroll = 0;
         let branches = [];
-        let timeLeft = 1.0; // Полная шкала = 1.0
+        let timeLeft = 1.0;
         let timerId = null;
-        let speedMultiplier = 1.0; // Множитель скорости уменьшения времени
-        const BASE_SPEED = 0.003; // Базовая скорость уменьшения времени
-        const TIME_BOOST = 0.5; // Сколько добавлять времени при нажатии (в долях от максимума)
-        const MAX_TIME = 1.0; // Максимальное значение таймера
+        let speedMultiplier = 1.0;
+        const BASE_SPEED = 0.003;
+        const TIME_BOOST = 0.5;
+        const MAX_TIME = 1.0;
         
-        // Настройки игры (будут обновлены в updateGameSettings)
+        // Настройки игры
         let BRANCH_WIDTH;
         let BRANCH_HEIGHT;
         let TREE_WIDTH;
         let PLAYER_SIZE;
         let LEVEL_HEIGHT;
-        let VISIBLE_LEVELS;
+        let VISIBLE_LEVELS = 2;
         
         function updateGameSettings() {
-            const scaleFactor = canvas.width / 400; // исходная ширина canvas
+            const scaleFactor = canvas.width / 400;
             
             BRANCH_WIDTH = 160 * scaleFactor;
             BRANCH_HEIGHT = 80 * scaleFactor;
             TREE_WIDTH = 100 * scaleFactor;
-            PLAYER_SIZE = 100 * scaleFactor;
-            LEVEL_HEIGHT = 120 * scaleFactor;
-            VISIBLE_LEVELS = 2;
+            PLAYER_SIZE = 80 * scaleFactor;
+            LEVEL_HEIGHT = 100 * scaleFactor;
         }
 
         function updateTimer() {
-            // Обновляем скорость в зависимости от счёта
             speedMultiplier = 1.0 + Math.floor(score / 20) * 0.5;
-            
-            // Уменьшаем время с учётом текущей скорости
             timeLeft -= BASE_SPEED * speedMultiplier;
             
-            // Обновляем прогресс-бар
             timerBar.style.width = `${Math.max(0, timeLeft) * 100}%`;
             
-            // Меняем цвет в зависимости от оставшегося времени
             if (timeLeft < 0.3) {
-                timerBar.style.backgroundColor = '#e74c3c'; // Красный
+                timerBar.style.backgroundColor = '#e74c3c';
             } else if (timeLeft < 0.6) {
-                timerBar.style.backgroundColor = '#f39c12'; // Оранжевый
+                timerBar.style.backgroundColor = '#f39c12';
             } else {
-                timerBar.style.backgroundColor = '#2ecc71'; // Зелёный
+                timerBar.style.backgroundColor = '#2ecc71';
             }
             
             if (timeLeft <= 0) {
@@ -251,7 +257,6 @@
 
         function drawTree() {
             if (images.tree) {
-                // Рисуем изображение дерева, растягивая его на всю высоту
                 ctx.drawImage(
                     images.tree,
                     canvas.width/2 - TREE_WIDTH/2,
@@ -260,7 +265,6 @@
                     canvas.height
                 );
             } else {
-                // Запасной вариант - прямоугольник
                 ctx.fillStyle = '#8b4513';
                 ctx.fillRect(
                     canvas.width/2 - TREE_WIDTH/2, 
@@ -282,7 +286,6 @@
             if (img) {
                 ctx.drawImage(img, x, y, PLAYER_SIZE, PLAYER_SIZE);
             } else {
-                // Запасной вариант - прямоугольник
                 ctx.fillStyle = '#3498db';
                 ctx.fillRect(x, y, PLAYER_SIZE, PLAYER_SIZE);
             }
@@ -306,7 +309,6 @@
                             BRANCH_HEIGHT
                         );
                     } else {
-                        // Запасной вариант - прямоугольник
                         ctx.fillStyle = '#2ecc71';
                         ctx.fillRect(
                             branch.side === 'left' ? 
@@ -324,7 +326,6 @@
         function generateSafeBranch() {
             const dangerousSides = new Set();
             
-            // Проверяем ветки на следующем уровне
             branches.forEach(branch => {
                 if(branch.y === -LEVEL_HEIGHT) {
                     dangerousSides.add(branch.side);
@@ -358,12 +359,9 @@
             if (!isGameRunning) return;
 
             playerSide = side;
-            treeScroll += LEVEL_HEIGHT; // Увеличиваем скролл - дерево движется вниз
-
-            // Добавляем время при нажатии кнопки
+            treeScroll += LEVEL_HEIGHT;
             addTime();
 
-            // Добавляем новые ветки сверху
             if(branches.every(b => b.y !== -treeScroll)) {
                 branches.push({
                     side: generateSafeBranch(),
@@ -371,13 +369,11 @@
                 });
             }
 
-            // Проверка коллизии
             if(checkCollision()) {
                 gameOver();
                 return;
             }
 
-            // Удаляем ветки, которые ушли за пределы экрана
             branches = branches.filter(b => b.y + treeScroll < canvas.height + BRANCH_HEIGHT);
 
             score++;
@@ -395,7 +391,6 @@
         }
 
         async function startGame() {
-            // Загружаем изображения перед началом игры
             if (!images.tree || !images.branchLeft || !images.branchRight || !images.playerLeft || !images.playerRight) {
                 await loadImages();
                 loadBackgroundImage();
@@ -413,7 +408,6 @@
             timerBar.style.backgroundColor = '#2ecc71';
             startButton.disabled = true;
 
-            // Инициализация начальных веток
             for(let i = 0; i < VISIBLE_LEVELS; i++) {
                 branches.push({
                     side: generateSafeBranch(),
@@ -421,7 +415,6 @@
                 });
             }
 
-            // Запускаем таймер
             if (timerId) cancelAnimationFrame(timerId);
             timerId = requestAnimationFrame(updateTimer);
 
@@ -432,11 +425,9 @@
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             if (backgroundImage) {
-                // Растягиваем изображение на весь canvas
                 ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
             } else {
-                // Запасной вариант - сплошной цвет
-                ctx.fillStyle = '#87CEEB'; // Голубой цвет неба
+                ctx.fillStyle = '#87CEEB';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
             }
 
@@ -451,16 +442,12 @@
         rightButton.addEventListener('click', () => handleMove('right'));
         startButton.addEventListener('click', startGame);
         
-        // Добавляем обработчики для сенсорного управления
+        // Сенсорное управление
         let touchStartX = 0;
         
         canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
             touchStartX = e.touches[0].clientX;
-        });
-        
-        canvas.addEventListener('touchmove', (e) => {
-            e.preventDefault();
         });
         
         canvas.addEventListener('touchend', (e) => {
@@ -469,7 +456,7 @@
             const touchEndX = e.changedTouches[0].clientX;
             const diffX = touchEndX - touchStartX;
             
-            if (Math.abs(diffX) > 30) { // Минимальное расстояние свайпа
+            if (Math.abs(diffX) > 30) {
                 if (diffX > 0) {
                     handleMove('right');
                 } else {
@@ -478,12 +465,20 @@
             }
         });
         
-        // Обработка изменения ориентации и размера экрана
+        // Обработка изменения размера
         window.addEventListener('resize', resizeCanvas);
         window.addEventListener('orientationchange', resizeCanvas);
         
-        // Инициализация при загрузке
+        // Инициализация
         resizeCanvas();
+        
+        // Telegram Mini App расширение
+        if (window.Telegram && window.Telegram.WebApp) {
+            Telegram.WebApp.expand();
+            Telegram.WebApp.enableClosingConfirmation();
+            
+            // Можно использовать Telegram.WebApp.sendData для отправки результатов
+        }
     </script>
 </body>
 </html>
