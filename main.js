@@ -8,9 +8,11 @@ document.addEventListener('DOMContentLoaded', function () {
     resizeCanvas();
 });
 
-window.addEventListener('resize', function () {
-    clearTimeout(this.resizeTimeout);
-    this.resizeTimeout = setTimeout(resizeCanvas, 200);
+window.addEventListener('resize', function() {
+    if (!isTelegram) { // Только если не в Telegram
+        clearTimeout(this.resizeTimeout);
+        this.resizeTimeout = setTimeout(resizeCanvas, 200);
+    }
 });
 
 let axeAnimation = {
@@ -40,6 +42,10 @@ const timerBar = document.getElementById('timerBar');
 const leftButton = document.getElementById('leftButton');
 const rightButton = document.getElementById('rightButton');
 let highScore = localStorage.getItem('highScore') || 0;
+
+let isTelegram = false;
+let viewportHeight = window.innerHeight;
+let viewportWidth = window.innerWidth;
 
 const IMAGE_PATHS = {
     tree: 'tree.png',
@@ -86,8 +92,18 @@ function loadImages() {
 }
 
 function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    if (window.Telegram && window.Telegram.WebApp) {
+        isTelegram = true;
+        Telegram.WebApp.expand();
+        viewportHeight = Telegram.WebApp.viewportHeight;
+        viewportWidth = Telegram.WebApp.viewportWidth;
+    } else {
+        viewportHeight = window.innerHeight;
+        viewportWidth = window.innerWidth;
+    }
+
+    canvas.width = viewportWidth;
+    canvas.height = viewportHeight;
     updateGameSettings();
 }
 
@@ -604,11 +620,15 @@ canvas.addEventListener('touchend', (e) => {
     }
 });
 
-// Initialize
-resizeCanvas();
-
-// Telegram Mini App
 if (window.Telegram && window.Telegram.WebApp) {
+    Telegram.WebApp.ready();
     Telegram.WebApp.expand();
-    Telegram.WebApp.enableClosingConfirmation();
+    resizeCanvas(); // Инициализируем размеры
+    
+    // Скрываем кнопку "Start", если Mini App уже открыта
+    startButton.classList.add('hidden');
+    startGame();
+} else {
+    // Обычная инициализация для браузера
+    resizeCanvas();
 }

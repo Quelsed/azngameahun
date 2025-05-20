@@ -1,3 +1,7 @@
+:root {
+    --tg-viewport-height: 100vh;
+    --tg-viewport-width: 100vw;
+}
 #startButton.hidden {
     display: none;
 }
@@ -141,19 +145,23 @@ body {
     margin-bottom: 30px;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 768px), (max-height: 700px) {
     .image-button {
-        width: 70px;
-        height: 70px;
+        width: 60px;
+        height: 60px;
     }
 
     #startButton {
-        width: 130px;
-        height: 130px;
+        width: 100px;
+        height: 100px;
     }
 
     #restartButton {
-        width: 100px;
-        height: 100px;
+        width: 80px;
+        height: 80px;
+    }
+    
+    #scoreContainer {
+        font-size: 18px;
     }
 }
