@@ -483,7 +483,7 @@ function gameOver() {
         playerFallProgress += 0.05;
         if (playerFallProgress >= 1) {
             playerFallProgress = 1;
-            startButton.classList.remove('hidden');
+            // УДАЛИТЬ ЭТУ СТРОКУ: startButton.classList.remove('hidden');
             if (timerId) {
                 cancelAnimationFrame(timerId);
                 timerId = null;
