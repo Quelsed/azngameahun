@@ -279,7 +279,7 @@
             BRANCH_HEIGHT = 80 * scaleFactor;
             TREE_WIDTH = 100 * scaleFactor;
             PLAYER_SIZE = 80 * scaleFactor;
-            LEVEL_HEIGHT = 100 * scaleFactor;
+            LEVEL_HEIGHT = 92 * scaleFactor;
         }
 
         function updateTimer() {
@@ -463,7 +463,7 @@
             timerBar.style.backgroundColor = '#2ecc71';
             startButton.disabled = true;
 
-            for (let i = 0; i < VISIBLE_LEVELS; i++) {
+            for (let i = 0; i < 1; i++) {
                 branches.push({
                     side: generateSafeBranch(),
                     y: -i * LEVEL_HEIGHT
