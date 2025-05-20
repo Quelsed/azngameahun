@@ -109,7 +109,11 @@ let BRANCH_HEIGHT;
 let TREE_WIDTH;
 let PLAYER_SIZE;
 let LEVEL_HEIGHT;
+<<<<<<< HEAD
 let VISIBLE_LEVELS = 1;
+=======
+let VISIBLE_LEVELS = 2;
+>>>>>>> b81ef4308463f02861e78b89f91aaae1378442d4
 let targetTreeScroll = 0;
 
 function updateGameSettings() {
@@ -189,7 +193,11 @@ function drawPlayer() {
         x = playerSide === 'left' ?
             canvas.width / 2 - TREE_WIDTH / 2 - PLAYER_SIZE :
             canvas.width / 2 + TREE_WIDTH / 2;
+<<<<<<< HEAD
         y = canvas.height - PLAYER_SIZE - 120;
+=======
+        y = canvas.height - PLAYER_SIZE - 80;
+>>>>>>> b81ef4308463f02861e78b89f91aaae1378442d4
 
         const img = playerSide === 'left' ? images.playerLeft : images.playerRight;
 
@@ -303,8 +311,11 @@ function drawFallingBranches() {
 }
 
 function drawBranches() {
+<<<<<<< HEAD
     const BRANCH_OFFSET = 130; // Новое значение отступа от дерева (было BRANCH_WIDTH)
     
+=======
+>>>>>>> b81ef4308463f02861e78b89f91aaae1378442d4
     branches.forEach(branch => {
         const branchY = branch.y + treeScroll - 80;
         if (branchY < canvas.height && branchY > -BRANCH_HEIGHT) {
@@ -312,8 +323,13 @@ function drawBranches() {
 
             if (img) {
                 const x = branch.side === 'left' ?
+<<<<<<< HEAD
                     canvas.width / 2 - TREE_WIDTH / 2 - BRANCH_OFFSET : // Изменено здесь
                     canvas.width / 2 + TREE_WIDTH / 2 - BRANCH_WIDTH + BRANCH_OFFSET; // И здесь
+=======
+                    canvas.width / 2 - TREE_WIDTH / 2 - BRANCH_WIDTH :
+                    canvas.width / 2 + TREE_WIDTH / 2;
+>>>>>>> b81ef4308463f02861e78b89f91aaae1378442d4
                 ctx.drawImage(
                     img,
                     x,
@@ -325,8 +341,13 @@ function drawBranches() {
                 ctx.fillStyle = '#2ecc71';
                 ctx.fillRect(
                     branch.side === 'left' ?
+<<<<<<< HEAD
                         canvas.width / 2 - TREE_WIDTH / 2 - BRANCH_OFFSET : // И здесь
                         canvas.width / 2 + TREE_WIDTH / 2 - BRANCH_WIDTH + BRANCH_OFFSET, // И здесь
+=======
+                        canvas.width / 2 - TREE_WIDTH / 2 - BRANCH_WIDTH :
+                        canvas.width / 2 + TREE_WIDTH / 2,
+>>>>>>> b81ef4308463f02861e78b89f91aaae1378442d4
                     branchY,
                     BRANCH_WIDTH,
                     BRANCH_HEIGHT
@@ -361,7 +382,10 @@ function checkCollision() {
     const playerHeadY = playerY + PLAYER_SIZE * 0.2;
     const playerHeadHeight = PLAYER_SIZE * 0.3;
 
+<<<<<<< HEAD
     // Проверяем ветки на текущем уровне
+=======
+>>>>>>> b81ef4308463f02861e78b89f91aaae1378442d4
     const branchAtPlayerLevel = branches.find(branch => {
         const branchYPos = branch.y + treeScroll;
         const branchBottom = branchYPos + BRANCH_HEIGHT;
@@ -373,6 +397,7 @@ function checkCollision() {
         );
     });
 
+<<<<<<< HEAD
     // Проверяем ветки на следующем уровне (если игрок только что срубил ветку)
     const branchAtNextLevel = branches.find(branch => {
         const branchYPos = branch.y + treeScroll + LEVEL_HEIGHT;
@@ -386,6 +411,9 @@ function checkCollision() {
     });
 
     return !!branchAtPlayerLevel || !!branchAtNextLevel;
+=======
+    return !!branchAtPlayerLevel;
+>>>>>>> b81ef4308463f02861e78b89f91aaae1378442d4
 }
 
 function handleMove(side) {
@@ -399,7 +427,11 @@ function handleMove(side) {
     };
 
     playerSide = side;
+<<<<<<< HEAD
     targetTreeScroll += LEVEL_HEIGHT+40;
+=======
+    targetTreeScroll += LEVEL_HEIGHT;
+>>>>>>> b81ef4308463f02861e78b89f91aaae1378442d4
     addTime();
 
     if (checkCollision()) {
@@ -420,6 +452,7 @@ function handleMove(side) {
         return branchBottom >= playerY && (branch.y + treeScroll + LEVEL_HEIGHT) <= playerY + PLAYER_SIZE;
     });
 
+<<<<<<< HEAD
     if (branchAtPlayerLevel) {
         if (branchAtPlayerLevel.side !== playerSide) {
             // Срубаем ветку
@@ -457,6 +490,23 @@ function handleMove(side) {
                 return;
             }
         }
+=======
+    if (branchAtPlayerLevel && branchAtPlayerLevel.side !== playerSide) {
+        const x = branchAtPlayerLevel.side === 'left' ?
+            canvas.width / 2 - TREE_WIDTH / 2 - BRANCH_WIDTH :
+            canvas.width / 2 + TREE_WIDTH / 2;
+
+        fallingBranches.push({
+            side: branchAtPlayerLevel.side,
+            x: x,
+            y: branchAtPlayerLevel.y + treeScroll + LEVEL_HEIGHT,
+            rotation: 0,
+            rotationSpeed: (Math.random() - 0.5) * 0.2
+        });
+
+        createParticles(x, branchAtPlayerLevel.y + treeScroll + LEVEL_HEIGHT, branchAtPlayerLevel.side);
+        branches = branches.filter(b => b !== branchAtPlayerLevel);
+>>>>>>> b81ef4308463f02861e78b89f91aaae1378442d4
     }
 
     if (branches.every(b => b.y !== -targetTreeScroll)) {
@@ -611,4 +661,8 @@ resizeCanvas();
 if (window.Telegram && window.Telegram.WebApp) {
     Telegram.WebApp.expand();
     Telegram.WebApp.enableClosingConfirmation();
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> b81ef4308463f02861e78b89f91aaae1378442d4

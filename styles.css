@@ -55,12 +55,20 @@ body {
 
 #controls {
     position: absolute;
+<<<<<<< HEAD
     bottom: 30px;
+=======
+    bottom: 10px;
+>>>>>>> b81ef4308463f02861e78b89f91aaae1378442d4
     left: 0;
     width: 100%;
     display: flex;
     justify-content: center;
+<<<<<<< HEAD
     gap: 30px;
+=======
+    gap: 20px;
+>>>>>>> b81ef4308463f02861e78b89f91aaae1378442d4
     z-index: 100;
 }
 
