@@ -8,11 +8,9 @@ document.addEventListener('DOMContentLoaded', function () {
     resizeCanvas();
 });
 
-window.addEventListener('resize', function() {
-    if (!isTelegram) { // Только если не в Telegram
-        clearTimeout(this.resizeTimeout);
-        this.resizeTimeout = setTimeout(resizeCanvas, 200);
-    }
+window.addEventListener('resize', function () {
+    clearTimeout(this.resizeTimeout);
+    this.resizeTimeout = setTimeout(resizeCanvas, 200);
 });
 
 let axeAnimation = {
@@ -42,10 +40,6 @@ const timerBar = document.getElementById('timerBar');
 const leftButton = document.getElementById('leftButton');
 const rightButton = document.getElementById('rightButton');
 let highScore = localStorage.getItem('highScore') || 0;
-
-let isTelegram = false;
-let viewportHeight = window.innerHeight;
-let viewportWidth = window.innerWidth;
 
 const IMAGE_PATHS = {
     tree: 'tree.png',
@@ -92,18 +86,8 @@ function loadImages() {
 }
 
 function resizeCanvas() {
-    if (window.Telegram && window.Telegram.WebApp) {
-        isTelegram = true;
-        Telegram.WebApp.expand();
-        viewportHeight = Telegram.WebApp.viewportHeight;
-        viewportWidth = Telegram.WebApp.viewportWidth;
-    } else {
-        viewportHeight = window.innerHeight;
-        viewportWidth = window.innerWidth;
-    }
-
-    canvas.width = viewportWidth;
-    canvas.height = viewportHeight;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
     updateGameSettings();
 }
 
@@ -119,6 +103,8 @@ const BASE_SPEED = 0.006;
 const TIME_BOOST = 0.3;
 const SCROLL_EASING = 0.2;
 const MAX_TIME = 1.0;
+
+let isTelegram = false;
 
 let BRANCH_WIDTH;
 let BRANCH_HEIGHT;
@@ -620,15 +606,13 @@ canvas.addEventListener('touchend', (e) => {
     }
 });
 
+// Initialize
+resizeCanvas();
+
+// Инициализация Telegram WebApp
 if (window.Telegram && window.Telegram.WebApp) {
     Telegram.WebApp.ready();
     Telegram.WebApp.expand();
-    resizeCanvas(); // Инициализируем размеры
     
-    // Скрываем кнопку "Start", если Mini App уже открыта
-    startButton.classList.add('hidden');
-    startGame();
-} else {
-    // Обычная инициализация для браузера
-    resizeCanvas();
 }
+
