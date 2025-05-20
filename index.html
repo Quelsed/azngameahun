@@ -1,59 +1,80 @@
+
 <!DOCTYPE html>
-<html lang="en">
+<html>
 
 <head>
-    <meta charset="UTF-8">
     <title>LumberJack</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#3498db">
-    <meta name="description" content="LumberJack - увлекательная игра про лесоруба">
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            -webkit-tap-highlight-color: transparent;
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
-        }
 
+        #gameOverScreen.show {
+            opacity: 1;
+            display: flex;
+        }
         body {
             overflow: hidden;
             height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
+            /* Центрируем по горизонтали */
             justify-content: center;
+            /* Добавим центрирование по вертикали */
             background-color: #f0f0f0;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            margin: 0;
+            padding: 0;
             touch-action: manipulation;
+            font-family: Arial, sans-serif;
+        }
+
+        .header {
+            width: 100%;
+            max-width: 400px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            /* Центрируем содержимое хедера */
         }
 
         #gameContainer {
-            position: relative;
+            flex: 1;
             width: 100%;
             max-width: 400px;
-            aspect-ratio: 2/3;
-            margin: 0 auto;
+            min-height: 0;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            /* Центрируем canvas по горизонтали */
+            align-items: center;
+            /* Центрируем canvas по вертикали */
         }
 
         #gameCanvas {
-            width: 100%;
-            height: 100%;
             display: block;
-            background-color: #87CEEB;
+            /* Убираем фиксированные width/height в стилях, будем управлять через JS */
+        }
+
+        .footer {
+            width: 100%;
+            max-width: 400px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            /* Центрируем содержимое футера */
         }
 
         #controls {
             display: flex;
             gap: 10px;
             width: 100%;
-            max-width: 400px;
             justify-content: space-between;
             padding: 10px;
+            box-sizing: border-box;
+            max-width: 400px;
+            /* Ограничиваем ширину контролов */
         }
 
         button {
@@ -66,35 +87,23 @@
             color: white;
             flex-grow: 1;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            transition: background-color 0.2s, transform 0.1s;
-        }
-
-        button:active {
-            transform: scale(0.98);
         }
 
         #startButton {
             background-color: #2ecc71;
             margin: 10px 0;
             width: 100%;
-            max-width: 400px;
-        }
-
-        #startButton:disabled {
-            background-color: #95a5a6;
-            cursor: not-allowed;
         }
 
         #score {
             font-size: 20px;
             font-weight: bold;
             margin: 5px 0;
-            color: #2c3e50;
+            text-align: center;
         }
 
         #timerContainer {
             width: 100%;
-            max-width: 400px;
             height: 15px;
             background-color: #ddd;
             border-radius: 8px;
@@ -105,453 +114,482 @@
         #timerBar {
             height: 100%;
             width: 100%;
-            background-color: #2ecc71;
+            background-color: #e74c3c;
             transition: width 0.1s linear;
         }
+        /* Добавьте в <style> */
+        #gameContainer {
+            position: relative; /* Чтобы экран Game Over позиционировался внутри него */
+            overflow: hidden; /* Чтобы не было прокрутки */
+        }
 
-        .info-container {
+        #gameOverScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
-            max-width: 400px;
-            display: flex;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 99999; /* Важно: должен быть выше, чем canvas */
+            display: none;
             flex-direction: column;
+            justify-content: center;
             align-items: center;
-            padding: 0 10px;
-        }
-
-        @media (max-height: 700px) {
-            #gameContainer {
-                max-width: 300px;
-            }
-        }
-
-        @media (max-width: 400px) {
-            button {
-                padding: 10px 15px;
-                font-size: 14px;
-            }
-        }
-
-        /* Fallback for browsers that don't support aspect-ratio */
-        @supports not (aspect-ratio: 1/1) {
-            #gameContainer {
-                height: 0;
-                padding-bottom: 150%;
-            }
+            color: white;
+            font-family: Arial, sans-serif;
         }
     </style>
 </head>
 
 <body>
-    <div class="info-container">
-        <button id="startButton">Start Game</button>
-        <div id="score">Score: 0</div>
-        <div id="timerContainer">
-            <div id="timerBar"></div>
+<div class="header">
+    <button id="startButton">Start Game</button>
+    <div id="score">Score: 0</div>
+    <div id="timerContainer">
+        <div id="timerBar"></div>
+    </div>
+</div>
+
+<div id="gameContainer">
+    <canvas id="gameCanvas" width="400" height="600"></canvas>
+    <div id="gameOverScreen" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7); z-index: 100; flex-direction: column; justify-content: center; align-items: center; color: white; font-family: Arial, sans-serif;">
+        <h1 style="font-size: 3em; margin-bottom: 20px; text-shadow: 2px 2px 4px #000;">GAME OVER</h1>
+        <p id="finalScore" style="font-size: 1.5em; margin-bottom: 30px;">Score: 0</p>
+        <div style="display: flex; gap: 15px;">
+            <button id="restartButton" style="padding: 12px 24px; font-size: 1.2em; background-color: #2ecc71; border: none; border-radius: 8px; cursor: pointer;">Play Again</button>
         </div>
     </div>
-    <div id="gameContainer">
-        <canvas id="gameCanvas"></canvas>
-    </div>
+</div>
+
+<div class="footer">
     <div id="controls">
         <button id="leftButton">← Left</button>
         <button id="rightButton">Right →</button>
     </div>
+</div>
 
-    <script>
-        // Защита от ошибок при загрузке
-        document.addEventListener('DOMContentLoaded', function () {
-            try {
-                initializeGame();
-            } catch (error) {
-                console.error('Game initialization error:', error);
-                alert('Sorry, the game could not load. Please try again later.');
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Блокируем масштабирование на мобильных устройствах
+        document.addEventListener('touchmove', function (e) {
+            if (e.scale !== 1) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        // Инициализация
+        resizeCanvas();
+    });
+
+    window.addEventListener('resize', function () {
+        clearTimeout(this.resizeTimeout);
+        this.resizeTimeout = setTimeout(resizeCanvas, 200);
+    });
+
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const startButton = document.getElementById('startButton');
+    const scoreElement = document.getElementById('score');
+    const timerBar = document.getElementById('timerBar');
+    const leftButton = document.getElementById('leftButton');
+    const rightButton = document.getElementById('rightButton');
+    let highScore = localStorage.getItem('highScore') || 0;
+
+    // Замените эти пути на реальные URL ваших изображений
+    const IMAGE_PATHS = {
+        tree: 'tree.png',
+        branchLeft: 'branchleft.png',
+        branchRight: 'branchright.png',
+        playerLeft: 'ahunleft.png',
+        playerRight: 'ahunright.png'
+    };
+
+    const BACKGROUND_IMAGE_PATH = 'back3.jpg';
+
+    // Загруженные изображения
+    const images = {
+        tree: null,
+        branchLeft: null,
+        branchRight: null,
+        playerLeft: null,
+        playerRight: null
+    };
+    let backgroundImage = null;
+
+    function loadBackgroundImage() {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.src = BACKGROUND_IMAGE_PATH;
+            img.onload = () => {
+                backgroundImage = img;
+                resolve();
+            };
+            img.onerror = () => {
+                console.error('Error loading background image');
+                resolve();
+            };
+        });
+    }
+
+    function loadImages() {
+        return new Promise((resolve, reject) => {
+            let loaded = 0;
+            const total = Object.keys(IMAGE_PATHS).length;
+
+            for (const key in IMAGE_PATHS) {
+                const img = new Image();
+                img.src = IMAGE_PATHS[key];
+                img.onload = () => {
+                    images[key] = img;
+                    loaded++;
+                    if (loaded === total) resolve();
+                };
+                img.onerror = () => {
+                    console.error(`Error loading image: ${IMAGE_PATHS[key]}`);
+                    images[key] = null;
+                    loaded++;
+                    if (loaded === total) resolve();
+                };
+            }
+        });
+    }
+
+    function resizeCanvas() {
+        const header = document.querySelector('.header');
+        const footer = document.querySelector('.footer');
+        const gameContainer = document.getElementById('gameContainer');
+
+        // Вычисляем доступную высоту для игрового поля
+        const availableHeight = window.innerHeight - header.offsetHeight - footer.offsetHeight;
+
+        // Устанавливаем размеры контейнера
+        gameContainer.style.height = `${availableHeight}px`;
+
+        // Рассчитываем пропорции canvas
+        const targetRatio = canvas.height / canvas.width; // Используем исходное соотношение 600/400 = 1.5
+        const maxWidth = Math.min(400, window.innerWidth);
+        const maxHeight = availableHeight;
+
+        // Вычисляем размеры с сохранением пропорций
+        let width = maxWidth;
+        let height = width * targetRatio;
+
+        if (height > maxHeight) {
+            height = maxHeight;
+            width = height / targetRatio;
+        }
+
+        // Центрируем canvas внутри контейнера
+        canvas.style.width = `${width}px`;
+        canvas.style.height = `${height}px`;
+
+        // Обновляем игровые настройки
+        updateGameSettings();
+    }
+
+    let isGameRunning = false;
+    let score = 0;
+    let playerSide = 'right';
+    let treeScroll = 0;
+    let branches = [];
+    let timeLeft = 1.0;
+    let timerId = null;
+    let speedMultiplier = 1.0;
+    const BASE_SPEED = 0.003;
+    const TIME_BOOST = 0.5;
+    const MAX_TIME = 1.0;
+
+    // Настройки игры
+    let BRANCH_WIDTH;
+    let BRANCH_HEIGHT;
+    let TREE_WIDTH;
+    let PLAYER_SIZE;
+    let LEVEL_HEIGHT;
+    let VISIBLE_LEVELS = 2;
+
+    function updateGameSettings() {
+        const scaleFactor = canvas.width / 400;
+
+        BRANCH_WIDTH = 160 * scaleFactor;
+        BRANCH_HEIGHT = 80 * scaleFactor;
+        TREE_WIDTH = 100 * scaleFactor;
+        PLAYER_SIZE = 80 * scaleFactor;
+        LEVEL_HEIGHT = 100 * scaleFactor;
+    }
+
+    function updateTimer() {
+        speedMultiplier = 1.0 + Math.floor(score / 20) * 0.5;
+        timeLeft -= BASE_SPEED * speedMultiplier;
+
+        timerBar.style.width = `${Math.max(0, timeLeft) * 100}%`;
+
+        if (timeLeft < 0.3) {
+            timerBar.style.backgroundColor = '#e74c3c';
+        } else if (timeLeft < 0.6) {
+            timerBar.style.backgroundColor = '#f39c12';
+        } else {
+            timerBar.style.backgroundColor = '#2ecc71';
+        }
+
+        if (timeLeft <= 0) {
+            gameOver();
+            return;
+        }
+
+        timerId = requestAnimationFrame(updateTimer);
+    }
+
+    function addTime() {
+        if (!isGameRunning) return;
+        timeLeft += TIME_BOOST / (1.0 + Math.floor(score / 20) * 0.5);
+        if (timeLeft > MAX_TIME) timeLeft = MAX_TIME;
+    }
+
+    function drawTree() {
+        if (images.tree) {
+            ctx.drawImage(
+                images.tree,
+                canvas.width / 2 - TREE_WIDTH / 2,
+                0,
+                TREE_WIDTH,
+                canvas.height
+            );
+        } else {
+            ctx.fillStyle = '#8b4513';
+            ctx.fillRect(
+                canvas.width / 2 - TREE_WIDTH / 2,
+                0,
+                TREE_WIDTH,
+                canvas.height
+            );
+        }
+    }
+
+    function drawPlayer() {
+        const x = playerSide === 'left' ?
+            canvas.width / 2 - TREE_WIDTH / 2 - PLAYER_SIZE :
+            canvas.width / 2 + TREE_WIDTH / 2;
+        const y = canvas.height - PLAYER_SIZE - 20;
+
+        const img = playerSide === 'left' ? images.playerLeft : images.playerRight;
+
+        if (img) {
+            ctx.drawImage(img, x, y, PLAYER_SIZE, PLAYER_SIZE);
+        } else {
+            ctx.fillStyle = '#3498db';
+            ctx.fillRect(x, y, PLAYER_SIZE, PLAYER_SIZE);
+        }
+    }
+
+    function drawBranches() {
+        branches.forEach(branch => {
+            const branchY = branch.y + treeScroll;
+            if (branchY < canvas.height && branchY > -BRANCH_HEIGHT) {
+                const img = branch.side === 'left' ? images.branchLeft : images.branchRight;
+
+                if (img) {
+                    const x = branch.side === 'left' ?
+                        canvas.width / 2 - TREE_WIDTH / 2 - BRANCH_WIDTH :
+                        canvas.width / 2 + TREE_WIDTH / 2;
+                    ctx.drawImage(
+                        img,
+                        x,
+                        branchY,
+                        BRANCH_WIDTH,
+                        BRANCH_HEIGHT
+                    );
+                } else {
+                    ctx.fillStyle = '#2ecc71';
+                    ctx.fillRect(
+                        branch.side === 'left' ?
+                            canvas.width / 2 - TREE_WIDTH / 2 - BRANCH_WIDTH :
+                            canvas.width / 2 + TREE_WIDTH / 2,
+                        branchY,
+                        BRANCH_WIDTH,
+                        BRANCH_HEIGHT
+                    );
+                }
+            }
+        });
+    }
+
+    function generateSafeBranch() {
+        const dangerousSides = new Set();
+
+        branches.forEach(branch => {
+            if (branch.y === -LEVEL_HEIGHT) {
+                dangerousSides.add(branch.side);
             }
         });
 
-        function initializeGame() {
-            // Блокировка масштабирования и других нежелательных жестов
-            document.addEventListener('gesturestart', function (e) {
-                e.preventDefault();
+        if (dangerousSides.size >= 2) return 'left';
+        if (dangerousSides.size === 1) return dangerousSides.has('left') ? 'right' : 'left';
+
+        const lastTwo = branches.slice(-2).map(b => b.side);
+        if (lastTwo.length === 2 && lastTwo[0] === lastTwo[1]) {
+            return lastTwo[0] === 'left' ? 'right' : 'left';
+        }
+
+        return Math.random() < 0.5 ? 'left' : 'right';
+    }
+
+    function checkCollision() {
+        const playerY = canvas.height - PLAYER_SIZE - 20;
+        return branches.some(branch => {
+            const branchBottom = branch.y + treeScroll + BRANCH_HEIGHT;
+            return (
+                branch.side === playerSide &&
+                branchBottom >= playerY &&
+                (branch.y + treeScroll) <= playerY + PLAYER_SIZE
+            );
+        });
+    }
+
+    function handleMove(side) {
+        if (!isGameRunning) return;
+
+        playerSide = side;
+        treeScroll += LEVEL_HEIGHT;
+        addTime();
+
+        if (branches.every(b => b.y !== -treeScroll)) {
+            branches.push({
+                side: generateSafeBranch(),
+                y: -treeScroll - LEVEL_HEIGHT
             });
+        }
 
-            document.addEventListener('touchmove', function (e) {
-                if (e.scale !== 1) {
-                    e.preventDefault();
-                }
-            }, { passive: false });
+        if (checkCollision()) {
+            gameOver();
+            return;
+        }
 
-            // Инициализация элементов
-            const canvas = document.getElementById('gameCanvas');
-            const ctx = canvas.getContext('2d');
-            const startButton = document.getElementById('startButton');
-            const scoreElement = document.getElementById('score');
-            const timerBar = document.getElementById('timerBar');
-            const leftButton = document.getElementById('leftButton');
-            const rightButton = document.getElementById('rightButton');
+        branches = branches.filter(b => b.y + treeScroll < canvas.height + BRANCH_HEIGHT);
 
-            // Пути к изображениям (можно заменить на реальные)
-            const IMAGE_PATHS = {
-                tree: 'tree.png',
-                branchLeft: 'branchleft.png',
-                branchRight: 'branchright.png',
-                playerLeft: 'ahunleft.png',
-                playerRight: 'ahunright.png',
-                background: 'back3.jpg'
-            };
+        score++;
+        scoreElement.textContent = `Score: ${score}`;
+    }
 
-            // Загруженные изображения
-            const images = {
-                tree: null,
-                branchLeft: null,
-                branchRight: null,
-                playerLeft: null,
-                playerRight: null,
-                background: null
-            };
+    function gameOver() {
+        isGameRunning = false;
+        startButton.disabled = false;
+        if (timerId) {
+            cancelAnimationFrame(timerId);
+            timerId = null;
+        }
 
-            // Состояние игры
-            let isGameRunning = false;
-            let score = 0;
-            let playerSide = 'right';
-            let treeScroll = 0;
-            let branches = [];
-            let timeLeft = 1.0;
-            let timerId = null;
-            let speedMultiplier = 1.0;
-            let animationFrameId = null;
-            const BASE_SPEED = 0.003;
-            const TIME_BOOST = 0.5;
-            const MAX_TIME = 1.0;
+        // Обновляем рекорд
+        if (score > highScore) {
+            highScore = score;
+            localStorage.setItem('highScore', highScore);
+        }
 
-            // Размеры элементов
-            let BRANCH_WIDTH, BRANCH_HEIGHT, TREE_WIDTH, PLAYER_SIZE, LEVEL_HEIGHT;
-            const VISIBLE_LEVELS = 2;
+        // Показываем экран Game Over
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const finalScoreElement = document.getElementById('finalScore');
 
-            // Функция загрузки изображений с fallback
-            function loadImages() {
-                return new Promise((resolve) => {
-                    let loaded = 0;
-                    const total = Object.keys(IMAGE_PATHS).length;
+        finalScoreElement.textContent = `Score: ${score} | Best: ${highScore}`;
+        gameOverScreen.style.display = 'flex';
+    }
 
-                    const checkLoaded = () => {
-                        loaded++;
-                        if (loaded === total) resolve();
-                    };
+    async function startGame() {
+        if (!images.tree || !images.branchLeft || !images.branchRight || !images.playerLeft || !images.playerRight) {
+            await loadImages();
+            loadBackgroundImage();
+        }
 
-                    for (const key in IMAGE_PATHS) {
-                        images[key] = new Image();
-                        images[key].onload = checkLoaded;
-                        images[key].onerror = function() {
-                            console.warn(`Failed to load image: ${IMAGE_PATHS[key]}`);
-                            images[key] = null;
-                            checkLoaded();
-                        };
-                        images[key].src = IMAGE_PATHS[key];
-                    }
-                });
-            }
+        isGameRunning = true;
+        score = 0;
+        timeLeft = MAX_TIME;
+        speedMultiplier = 1.0;
+        treeScroll = 0;
+        playerSide = 'right';
+        branches = [];
+        scoreElement.textContent = `Score: ${score}`;
+        timerBar.style.width = '100%';
+        timerBar.style.backgroundColor = '#2ecc71';
+        startButton.disabled = true;
 
-            // Установка размеров игры
-            function setupGameDimensions() {
-                const canvasWidth = document.getElementById('gameContainer').clientWidth;
-                const scaleFactor = canvasWidth / 400;
-
-                BRANCH_WIDTH = 160 * scaleFactor;
-                BRANCH_HEIGHT = 80 * scaleFactor;
-                TREE_WIDTH = 100 * scaleFactor;
-                PLAYER_SIZE = 80 * scaleFactor;
-                LEVEL_HEIGHT = 80 * scaleFactor;
-
-                // Установка размеров canvas
-                canvas.width = canvasWidth;
-                canvas.height = canvasWidth * 1.5; // Соотношение 2:3
-            }
-
-            // Таймер игры
-            function updateTimer() {
-                if (!isGameRunning) return;
-
-                speedMultiplier = 1.0 + Math.floor(score / 20) * 0.5;
-                timeLeft -= BASE_SPEED * speedMultiplier;
-
-                timerBar.style.width = `${Math.max(0, timeLeft) * 100}%`;
-
-                // Изменение цвета таймера
-                if (timeLeft < 0.3) {
-                    timerBar.style.backgroundColor = '#e74c3c';
-                } else if (timeLeft < 0.6) {
-                    timerBar.style.backgroundColor = '#f39c12';
-                } else {
-                    timerBar.style.backgroundColor = '#2ecc71';
-                }
-
-                if (timeLeft <= 0) {
-                    gameOver();
-                    return;
-                }
-
-                timerId = requestAnimationFrame(updateTimer);
-            }
-
-            // Добавление времени
-            function addTime() {
-                if (!isGameRunning) return;
-                timeLeft = Math.min(timeLeft + TIME_BOOST / (1.0 + Math.floor(score / 20) * 0.5), MAX_TIME);
-            }
-
-            // Отрисовка дерева
-            function drawTree() {
-                const treeX = canvas.width / 2 - TREE_WIDTH / 2;
-                
-                if (images.tree) {
-                    ctx.drawImage(images.tree, treeX, 0, TREE_WIDTH, canvas.height);
-                } else {
-                    ctx.fillStyle = '#8b4513';
-                    ctx.fillRect(treeX, 0, TREE_WIDTH, canvas.height);
-                }
-            }
-
-            // Отрисовка игрока
-            function drawPlayer() {
-                const x = playerSide === 'left' 
-                    ? canvas.width / 2 - TREE_WIDTH / 2 - PLAYER_SIZE 
-                    : canvas.width / 2 + TREE_WIDTH / 2;
-                const y = canvas.height - PLAYER_SIZE - 20;
-
-                const img = playerSide === 'left' ? images.playerLeft : images.playerRight;
-
-                if (img) {
-                    ctx.drawImage(img, x, y, PLAYER_SIZE, PLAYER_SIZE);
-                } else {
-                    ctx.fillStyle = '#3498db';
-                    ctx.fillRect(x, y, PLAYER_SIZE, PLAYER_SIZE);
-                }
-            }
-
-            // Отрисовка веток
-            function drawBranches() {
-                branches.forEach(branch => {
-                    const branchY = branch.y + treeScroll;
-                    if (branchY < canvas.height && branchY > -BRANCH_HEIGHT) {
-                        const x = branch.side === 'left' 
-                            ? canvas.width / 2 - TREE_WIDTH / 2 - BRANCH_WIDTH 
-                            : canvas.width / 2 + TREE_WIDTH / 2;
-                        
-                        const img = branch.side === 'left' ? images.branchLeft : images.branchRight;
-
-                        if (img) {
-                            ctx.drawImage(img, x, branchY, BRANCH_WIDTH, BRANCH_HEIGHT);
-                        } else {
-                            ctx.fillStyle = '#2ecc71';
-                            ctx.fillRect(x, branchY, BRANCH_WIDTH, BRANCH_HEIGHT);
-                        }
-                    }
-                });
-            }
-
-            // Генерация безопасной ветки
-            function generateSafeBranch() {
-                const dangerousSides = new Set();
-
-                branches.forEach(branch => {
-                    if (branch.y === -LEVEL_HEIGHT) {
-                        dangerousSides.add(branch.side);
-                    }
-                });
-
-                if (dangerousSides.size >= 2) return 'left';
-                if (dangerousSides.size === 1) return dangerousSides.has('left') ? 'right' : 'left';
-
-                const lastTwo = branches.slice(-2).map(b => b.side);
-                if (lastTwo.length === 2 && lastTwo[0] === lastTwo[1]) {
-                    return lastTwo[0] === 'left' ? 'right' : 'left';
-                }
-
-                return Math.random() < 0.5 ? 'left' : 'right';
-            }
-
-            // Проверка столкновений
-            function checkCollision() {
-                const playerY = canvas.height - PLAYER_SIZE - 20;
-                return branches.some(branch => {
-                    const branchBottom = branch.y + treeScroll + BRANCH_HEIGHT;
-                    return (
-                        branch.side === playerSide &&
-                        branchBottom >= playerY &&
-                        (branch.y + treeScroll) <= playerY + PLAYER_SIZE
-                    );
-                });
-            }
-
-            // Обработка движения
-            function handleMove(side) {
-                if (!isGameRunning) return;
-
-                playerSide = side;
-                treeScroll += LEVEL_HEIGHT;
-                addTime();
-
-                if (branches.every(b => b.y !== -treeScroll)) {
-                    branches.push({
-                        side: generateSafeBranch(),
-                        y: -treeScroll - LEVEL_HEIGHT
-                    });
-                }
-
-                if (checkCollision()) {
-                    gameOver();
-                    return;
-                }
-
-                branches = branches.filter(b => b.y + treeScroll < canvas.height + BRANCH_HEIGHT);
-
-                score++;
-                scoreElement.textContent = `Score: ${score}`;
-            }
-
-            // Конец игры
-            function gameOver() {
-                isGameRunning = false;
-                startButton.disabled = false;
-                
-                if (timerId) {
-                    cancelAnimationFrame(timerId);
-                    timerId = null;
-                }
-                
-                if (animationFrameId) {
-                    cancelAnimationFrame(animationFrameId);
-                    animationFrameId = null;
-                }
-
-                // Отложенное отображение alert, чтобы не блокировать анимацию
-                setTimeout(() => {
-                    alert(`Game Over! Score: ${score}`);
-                }, 50);
-            }
-
-            // Основной игровой цикл
-            function gameLoop() {
-                if (!isGameRunning) return;
-
-                // Очистка canvas
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-                // Фон
-                if (images.background) {
-                    ctx.drawImage(images.background, 0, 0, canvas.width, canvas.height);
-                } else {
-                    ctx.fillStyle = '#87CEEB';
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                }
-
-                drawTree();
-                drawBranches();
-                drawPlayer();
-
-                animationFrameId = requestAnimationFrame(gameLoop);
-            }
-
-            // Начало игры
-            async function startGame() {
-                try {
-                    if (!images.tree) {
-                        await loadImages();
-                    }
-
-                    isGameRunning = true;
-                    score = 0;
-                    timeLeft = MAX_TIME;
-                    speedMultiplier = 1.0;
-                    treeScroll = 0;
-                    playerSide = 'right';
-                    branches = [];
-                    scoreElement.textContent = `Score: ${score}`;
-                    timerBar.style.width = '100%';
-                    timerBar.style.backgroundColor = '#2ecc71';
-                    startButton.disabled = true;
-
-                    // Начальные ветки
-                    for (let i = 0; i < 1; i++) {
-                        branches.push({
-                            side: generateSafeBranch(),
-                            y: -i * LEVEL_HEIGHT
-                        });
-                    }
-
-                    if (timerId) cancelAnimationFrame(timerId);
-                    if (animationFrameId) cancelAnimationFrame(animationFrameId);
-
-                    timerId = requestAnimationFrame(updateTimer);
-                    animationFrameId = requestAnimationFrame(gameLoop);
-                } catch (error) {
-                    console.error('Error starting game:', error);
-                    alert('Failed to start the game. Please try again.');
-                }
-            }
-
-            // Обработчики событий
-            leftButton.addEventListener('click', () => handleMove('left'));
-            rightButton.addEventListener('click', () => handleMove('right'));
-            startButton.addEventListener('click', startGame);
-
-            // Сенсорное управление
-            let touchStartX = 0;
-
-            canvas.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                touchStartX = e.touches[0].clientX;
-            }, { passive: false });
-
-            canvas.addEventListener('touchend', (e) => {
-                if (!isGameRunning) return;
-                e.preventDefault();
-
-                const touchEndX = e.changedTouches[0].clientX;
-                const diffX = touchEndX - touchStartX;
-
-                if (Math.abs(diffX) > 30) {
-                    handleMove(diffX > 0 ? 'right' : 'left');
-                }
-            }, { passive: false });
-
-            // Клавиатурное управление
-            document.addEventListener('keydown', (e) => {
-                if (!isGameRunning) return;
-                
-                if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
-                    handleMove('left');
-                } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
-                    handleMove('right');
-                }
+        for (let i = 0; i < VISIBLE_LEVELS; i++) {
+            branches.push({
+                side: generateSafeBranch(),
+                y: -i * LEVEL_HEIGHT
             });
+        }
 
-            // Обработка изменения размера
-            function handleResize() {
-                setupGameDimensions();
-                if (isGameRunning) {
-                    // Перерисовка при изменении размера во время игры
-                    requestAnimationFrame(gameLoop);
-                }
-            }
+        if (timerId) cancelAnimationFrame(timerId);
+        timerId = requestAnimationFrame(updateTimer);
 
-            window.addEventListener('resize', handleResize);
-            window.addEventListener('orientationchange', handleResize);
+        gameLoop();
+    }
 
-            // Инициализация при загрузке
-            setupGameDimensions();
+    function gameLoop() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Telegram Mini App расширение
-            if (window.Telegram && window.Telegram.WebApp) {
-                try {
-                    Telegram.WebApp.expand();
-                    Telegram.WebApp.enableClosingConfirmation();
-                } catch (error) {
-                    console.warn('Telegram WebApp integration error:', error);
-                }
+        if (backgroundImage) {
+            ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+        } else {
+            ctx.fillStyle = '#87CEEB';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        drawTree();
+        drawBranches();
+        drawPlayer();
+        if (isGameRunning) requestAnimationFrame(gameLoop);
+    }
+
+    // Обработчики событий
+    leftButton.addEventListener('click', () => handleMove('left'));
+    rightButton.addEventListener('click', () => handleMove('right'));
+    startButton.addEventListener('click', startGame);
+    document.getElementById('restartButton').addEventListener('click', () => {
+        document.getElementById('gameOverScreen').style.display = 'none';
+        startGame();
+    });
+
+    document.getElementById('menuButton').addEventListener('click', () => {
+        document.getElementById('gameOverScreen').style.display = 'none';
+        // Здесь можно добавить переход в меню, если оно есть
+        alert('Returning to main menu (add your logic here)');
+    });
+
+    // Сенсорное управление
+    let touchStartX = 0;
+
+    canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        touchStartX = e.touches[0].clientX;
+    });
+
+    canvas.addEventListener('touchend', (e) => {
+        if (!isGameRunning) return;
+
+        const touchEndX = e.changedTouches[0].clientX;
+        const diffX = touchEndX - touchStartX;
+
+        if (Math.abs(diffX) > 30) {
+            if (diffX > 0) {
+                handleMove('right');
+            } else {
+                handleMove('left');
             }
         }
-    </script>
+    });
+
+    // Обработка изменения размера
+    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('orientationchange', resizeCanvas);
+
+    // Инициализация
+    resizeCanvas();
+
+    // Telegram Mini App расширение
+    if (window.Telegram && window.Telegram.WebApp) {
+        Telegram.WebApp.expand();
+        Telegram.WebApp.enableClosingConfirmation();
+    }
+</script>
 </body>
 
 </html>
