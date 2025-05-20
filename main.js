@@ -1,4 +1,3 @@
-initTelegramWebApp();
 document.addEventListener('DOMContentLoaded', function () {
     document.addEventListener('touchmove', function (e) {
         if (e.scale !== 1) {
@@ -114,21 +113,13 @@ let VISIBLE_LEVELS = 1;
 let targetTreeScroll = 0;
 
 function updateGameSettings() {
-    const baseWidth = 400;
-    const baseHeight = 700;
-    
-    // Масштабируем относительно и меньшей из сторон
-    const scaleFactor = Math.min(
-        canvas.width / baseWidth,
-        canvas.height / baseHeight
-    );
+    const scaleFactor = canvas.width / 400;
 
     BRANCH_WIDTH = 160 * scaleFactor;
     BRANCH_HEIGHT = 80 * scaleFactor;
     TREE_WIDTH = 100 * scaleFactor;
     PLAYER_SIZE = 100 * scaleFactor;
-    LEVEL_HEIGHT = 120 * scaleFactor;
-    VISIBLE_LEVELS = Math.ceil(canvas.height / LEVEL_HEIGHT) + 1;
+    LEVEL_HEIGHT = 100 * scaleFactor;
 }
 
 function updateTimer() {
@@ -498,7 +489,7 @@ function gameOver() {
 
             if (score > highScore) {
                 highScore = score;
-                saveHighScore(highScore);
+                localStorage.setItem('highScore', highScore);
             }
 
             const gameOverScreen = document.getElementById('gameOverScreen');
@@ -518,7 +509,7 @@ function gameOver() {
 
 async function startGame() {
     if (!images.tree || !images.branchLeft || !images.branchRight || !images.playerLeft || !images.playerRight) {
-        highScore = await loadHighScore();
+        await loadImages();
     }
 
     startButton.classList.add('hidden');
@@ -617,36 +608,7 @@ canvas.addEventListener('touchend', (e) => {
 resizeCanvas();
 
 // Telegram Mini App
-function initTelegramWebApp() {
-    if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
-        Telegram.WebApp.ready();
-        Telegram.WebApp.expand();
-        Telegram.WebApp.MainButton.hide();
-        
-        // Адаптация под системную тему
-        const themeParams = Telegram.WebApp.themeParams;
-        document.body.style.backgroundColor = themeParams.bg_color || '#000000';
-        
-        // Обновим цвета текста
-        document.querySelectorAll('#scoreContainer, #timerContainer, #gameOverScreen')
-            .forEach(el => {
-                el.style.color = themeParams.text_color || '#ffffff';
-            });
-    }
+if (window.Telegram && window.Telegram.WebApp) {
+    Telegram.WebApp.expand();
+    Telegram.WebApp.enableClosingConfirmation();
 }
-
-async function saveHighScore(score) {
-    if (Telegram.WebApp.initDataUnsafe.user) {
-        const userId = Telegram.WebApp.initDataUnsafe.user.id;
-        await Telegram.WebApp.CloudStorage.setItem(`hs_${userId}`, score);
-    }
-}
-
-async function loadHighScore() {
-    if (Telegram.WebApp.initDataUnsafe.user) {
-        const userId = Telegram.WebApp.initDataUnsafe.user.id;
-        return parseInt(await Telegram.WebApp.CloudStorage.getItem(`hs_${userId}`)) || 0;
-    }
-    return 0;
-}
-
