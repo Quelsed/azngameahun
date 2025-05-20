@@ -11,9 +11,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            /* Центрируем по горизонтали */
             justify-content: center;
-            /* Добавим центрирование по вертикали */
             background-color: #f0f0f0;
             margin: 0;
             padding: 0;
@@ -28,7 +26,6 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            /* Центрируем содержимое хедера */
         }
 
         #gameContainer {
@@ -40,14 +37,11 @@
             overflow: hidden;
             display: flex;
             justify-content: center;
-            /* Центрируем canvas по горизонтали */
             align-items: center;
-            /* Центрируем canvas по вертикали */
         }
 
         #gameCanvas {
             display: block;
-            /* Убираем фиксированные width/height в стилях, будем управлять через JS */
         }
 
         .footer {
@@ -57,7 +51,6 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            /* Центрируем содержимое футера */
         }
 
         #controls {
@@ -68,7 +61,6 @@
             padding: 10px;
             box-sizing: border-box;
             max-width: 400px;
-            /* Ограничиваем ширину контролов */
         }
 
         button {
@@ -81,6 +73,7 @@
             color: white;
             flex-grow: 1;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: transform 0.1s;
         }
 
         #startButton {
@@ -115,424 +108,529 @@
 </head>
 
 <body>
-    <div class="header">
-        <button id="startButton">Start Game</button>
-        <div id="score">Score: 0</div>
-        <div id="timerContainer">
-            <div id="timerBar"></div>
-        </div>
+<div class="header">
+    <button id="startButton">Start Game</button>
+    <div id="score">Score: 0</div>
+    <div id="timerContainer">
+        <div id="timerBar"></div>
     </div>
+</div>
 
-    <div id="gameContainer">
-        <canvas id="gameCanvas" width="400" height="600"></canvas>
+<div id="gameContainer">
+    <canvas id="gameCanvas" width="400" height="600"></canvas>
+</div>
+
+<div class="footer">
+    <div id="controls">
+        <button id="leftButton">← Left</button>
+        <button id="rightButton">Right →</button>
     </div>
+</div>
 
-    <div class="footer">
-        <div id="controls">
-            <button id="leftButton">← Left</button>
-            <button id="rightButton">Right →</button>
-        </div>
-    </div>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('touchmove', function (e) {
+            if (e.scale !== 1) {
+                e.preventDefault();
+            }
+        }, { passive: false });
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // Блокируем масштабирование на мобильных устройствах
-            document.addEventListener('touchmove', function (e) {
-                if (e.scale !== 1) {
-                    e.preventDefault();
-                }
-            }, { passive: false });
+        resizeCanvas();
+    });
 
-            // Инициализация
-            resizeCanvas();
+    window.addEventListener('resize', function () {
+        clearTimeout(this.resizeTimeout);
+        this.resizeTimeout = setTimeout(resizeCanvas, 200);
+    });
+
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const startButton = document.getElementById('startButton');
+    const scoreElement = document.getElementById('score');
+    const timerBar = document.getElementById('timerBar');
+    const leftButton = document.getElementById('leftButton');
+    const rightButton = document.getElementById('rightButton');
+
+    const IMAGE_PATHS = {
+        tree: 'tree.png',
+        branchLeft: 'branchleft.png',
+        branchRight: 'branchright.png',
+        playerLeft: 'ahunleft.png',
+        playerRight: 'ahunright.png'
+    };
+
+    const BACKGROUND_IMAGE_PATH = 'back3.jpg';
+
+    const images = {
+        tree: null,
+        branchLeft: null,
+        branchRight: null,
+        playerLeft: null,
+        playerRight: null
+    };
+    let backgroundImage = null;
+
+    // Система частиц
+    const particles = [];
+    const PARTICLE_TYPES = {
+        WOOD_CHIP: 0,
+        LEAF: 1
+    };
+
+    function createParticles(x, y, count, type) {
+        for (let i = 0; i < count; i++) {
+            const particle = {
+                x: x,
+                y: y,
+                vx: (Math.random() - 0.5) * 5,
+                vy: -Math.random() * 3 - 2,
+                size: Math.random() * 5 + 2,
+                rotation: Math.random() * Math.PI * 2,
+                rotationSpeed: (Math.random() - 0.5) * 0.2,
+                type: type,
+                life: 60 + Math.random() * 30,
+                decay: Math.random() * 0.05 + 0.01
+            };
+            particles.push(particle);
+        }
+    }
+
+    function updateParticles() {
+        for (let i = particles.length - 1; i >= 0; i--) {
+            const p = particles[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += 0.1;
+            p.rotation += p.rotationSpeed;
+            p.life -= p.decay;
+
+            if (p.life <= 0) {
+                particles.splice(i, 1);
+            }
+        }
+    }
+
+    function drawParticles() {
+        particles.forEach(p => {
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.rotation);
+
+            if (p.type === PARTICLE_TYPES.WOOD_CHIP) {
+                ctx.fillStyle = '#DEB887';
+                ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size/3);
+            } else {
+                ctx.fillStyle = '#3CB371';
+                ctx.beginPath();
+                ctx.ellipse(0, 0, p.size, p.size/2, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            ctx.restore();
         });
+    }
 
-        window.addEventListener('resize', function () {
-            clearTimeout(this.resizeTimeout);
-            this.resizeTimeout = setTimeout(resizeCanvas, 200);
+    function loadBackgroundImage() {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.src = BACKGROUND_IMAGE_PATH;
+            img.onload = () => {
+                backgroundImage = img;
+                resolve();
+            };
+            img.onerror = () => {
+                console.error('Error loading background image');
+                resolve();
+            };
         });
+    }
 
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const startButton = document.getElementById('startButton');
-        const scoreElement = document.getElementById('score');
-        const timerBar = document.getElementById('timerBar');
-        const leftButton = document.getElementById('leftButton');
-        const rightButton = document.getElementById('rightButton');
+    function loadImages() {
+        return new Promise((resolve, reject) => {
+            let loaded = 0;
+            const total = Object.keys(IMAGE_PATHS).length;
 
-        // Замените эти пути на реальные URL ваших изображений
-        const IMAGE_PATHS = {
-            tree: 'tree.png',
-            branchLeft: 'branchleft.png',
-            branchRight: 'branchright.png',
-            playerLeft: 'ahunleft.png',
-            playerRight: 'ahunright.png'
-        };
-
-        const BACKGROUND_IMAGE_PATH = 'back3.jpg';
-
-        // Загруженные изображения
-        const images = {
-            tree: null,
-            branchLeft: null,
-            branchRight: null,
-            playerLeft: null,
-            playerRight: null
-        };
-        let backgroundImage = null;
-
-        function loadBackgroundImage() {
-            return new Promise((resolve, reject) => {
+            for (const key in IMAGE_PATHS) {
                 const img = new Image();
-                img.src = BACKGROUND_IMAGE_PATH;
+                img.src = IMAGE_PATHS[key];
                 img.onload = () => {
-                    backgroundImage = img;
-                    resolve();
+                    images[key] = img;
+                    loaded++;
+                    if (loaded === total) resolve();
                 };
                 img.onerror = () => {
-                    console.error('Error loading background image');
-                    resolve();
+                    console.error(`Error loading image: ${IMAGE_PATHS[key]}`);
+                    images[key] = null;
+                    loaded++;
+                    if (loaded === total) resolve();
                 };
-            });
-        }
-
-        function loadImages() {
-            return new Promise((resolve, reject) => {
-                let loaded = 0;
-                const total = Object.keys(IMAGE_PATHS).length;
-
-                for (const key in IMAGE_PATHS) {
-                    const img = new Image();
-                    img.src = IMAGE_PATHS[key];
-                    img.onload = () => {
-                        images[key] = img;
-                        loaded++;
-                        if (loaded === total) resolve();
-                    };
-                    img.onerror = () => {
-                        console.error(`Error loading image: ${IMAGE_PATHS[key]}`);
-                        images[key] = null;
-                        loaded++;
-                        if (loaded === total) resolve();
-                    };
-                }
-            });
-        }
-
-        function resizeCanvas() {
-            const header = document.querySelector('.header');
-            const footer = document.querySelector('.footer');
-            const gameContainer = document.getElementById('gameContainer');
-
-            // Вычисляем доступную высоту для игрового поля
-            const availableHeight = window.innerHeight - header.offsetHeight - footer.offsetHeight;
-
-            // Устанавливаем размеры контейнера
-            gameContainer.style.height = `${availableHeight}px`;
-
-            // Рассчитываем пропорции canvas
-            const targetRatio = canvas.height / canvas.width; // Используем исходное соотношение 600/400 = 1.5
-            const maxWidth = Math.min(400, window.innerWidth);
-            const maxHeight = availableHeight;
-
-            // Вычисляем размеры с сохранением пропорций
-            let width = maxWidth;
-            let height = width * targetRatio;
-
-            if (height > maxHeight) {
-                height = maxHeight;
-                width = height / targetRatio;
             }
+        });
+    }
 
-            // Центрируем canvas внутри контейнера
-            canvas.style.width = `${width}px`;
-            canvas.style.height = `${height}px`;
+    function resizeCanvas() {
+        const header = document.querySelector('.header');
+        const footer = document.querySelector('.footer');
+        const gameContainer = document.getElementById('gameContainer');
 
-            // Обновляем игровые настройки
-            updateGameSettings();
+        const availableHeight = window.innerHeight - header.offsetHeight - footer.offsetHeight;
+        gameContainer.style.height = `${availableHeight}px`;
+
+        const targetRatio = canvas.height / canvas.width;
+        const maxWidth = Math.min(400, window.innerWidth);
+        const maxHeight = availableHeight;
+
+        let width = maxWidth;
+        let height = width * targetRatio;
+
+        if (height > maxHeight) {
+            height = maxHeight;
+            width = height / targetRatio;
         }
 
-        let isGameRunning = false;
-        let score = 0;
-        let playerSide = 'right';
-        let treeScroll = 0;
-        let branches = [];
-        let timeLeft = 1.0;
-        let timerId = null;
-        let speedMultiplier = 1.0;
-        const BASE_SPEED = 0.003;
-        const TIME_BOOST = 0.5;
-        const MAX_TIME = 1.0;
+        canvas.style.width = `${width}px`;
+        canvas.style.height = `${height}px`;
+        updateGameSettings();
+    }
 
-        // Настройки игры
-        let BRANCH_WIDTH;
-        let BRANCH_HEIGHT;
-        let TREE_WIDTH;
-        let PLAYER_SIZE;
-        let LEVEL_HEIGHT;
-        let VISIBLE_LEVELS = 2;
+    let isGameRunning = false;
+    let score = 0;
+    let playerSide = 'right';
+    let treeScroll = 0;
+    let branches = [];
+    let timeLeft = 1.0;
+    let timerId = null;
+    let speedMultiplier = 1.0;
+    const BASE_SPEED = 0.003;
+    const TIME_BOOST = 0.5;
+    const MAX_TIME = 1.0;
 
-        function updateGameSettings() {
-            const scaleFactor = canvas.width / 400;
+    let BRANCH_WIDTH;
+    let BRANCH_HEIGHT;
+    let TREE_WIDTH;
+    let PLAYER_SIZE;
+    let LEVEL_HEIGHT;
+    let VISIBLE_LEVELS = 2;
 
-            BRANCH_WIDTH = 160 * scaleFactor;
-            BRANCH_HEIGHT = 80 * scaleFactor;
-            TREE_WIDTH = 100 * scaleFactor;
-            PLAYER_SIZE = 80 * scaleFactor;
-            LEVEL_HEIGHT = 100 * scaleFactor;
-        }
+    function updateGameSettings() {
+        const scaleFactor = canvas.width / 400;
 
-        function updateTimer() {
-            speedMultiplier = 1.0 + Math.floor(score / 20) * 0.5;
-            timeLeft -= BASE_SPEED * speedMultiplier;
+        BRANCH_WIDTH = 160 * scaleFactor;
+        BRANCH_HEIGHT = 80 * scaleFactor;
+        TREE_WIDTH = 100 * scaleFactor;
+        PLAYER_SIZE = 80 * scaleFactor;
+        LEVEL_HEIGHT = 100 * scaleFactor;
+    }
 
-            timerBar.style.width = `${Math.max(0, timeLeft) * 100}%`;
+    function updateTimer() {
+        speedMultiplier = 1.0 + Math.floor(score / 20) * 0.5;
+        timeLeft -= BASE_SPEED * speedMultiplier;
 
-            if (timeLeft < 0.3) {
-                timerBar.style.backgroundColor = '#e74c3c';
-            } else if (timeLeft < 0.6) {
-                timerBar.style.backgroundColor = '#f39c12';
-            } else {
-                timerBar.style.backgroundColor = '#2ecc71';
-            }
+        timerBar.style.width = `${Math.max(0, timeLeft) * 100}%`;
 
-            if (timeLeft <= 0) {
-                gameOver();
-                return;
-            }
-
-            timerId = requestAnimationFrame(updateTimer);
-        }
-
-        function addTime() {
-            if (!isGameRunning) return;
-            timeLeft += TIME_BOOST / (1.0 + Math.floor(score / 20) * 0.5);
-            if (timeLeft > MAX_TIME) timeLeft = MAX_TIME;
-        }
-
-        function drawTree() {
-            if (images.tree) {
-                ctx.drawImage(
-                    images.tree,
-                    canvas.width / 2 - TREE_WIDTH / 2,
-                    0,
-                    TREE_WIDTH,
-                    canvas.height
-                );
-            } else {
-                ctx.fillStyle = '#8b4513';
-                ctx.fillRect(
-                    canvas.width / 2 - TREE_WIDTH / 2,
-                    0,
-                    TREE_WIDTH,
-                    canvas.height
-                );
-            }
-        }
-
-        function drawPlayer() {
-            const x = playerSide === 'left' ?
-                canvas.width / 2 - TREE_WIDTH / 2 - PLAYER_SIZE :
-                canvas.width / 2 + TREE_WIDTH / 2;
-            const y = canvas.height - PLAYER_SIZE - 20;
-
-            const img = playerSide === 'left' ? images.playerLeft : images.playerRight;
-
-            if (img) {
-                ctx.drawImage(img, x, y, PLAYER_SIZE, PLAYER_SIZE);
-            } else {
-                ctx.fillStyle = '#3498db';
-                ctx.fillRect(x, y, PLAYER_SIZE, PLAYER_SIZE);
-            }
-        }
-
-        function drawBranches() {
-            branches.forEach(branch => {
-                const branchY = branch.y + treeScroll;
-                if (branchY < canvas.height && branchY > -BRANCH_HEIGHT) {
-                    const img = branch.side === 'left' ? images.branchLeft : images.branchRight;
-
-                    if (img) {
-                        const x = branch.side === 'left' ?
-                            canvas.width / 2 - TREE_WIDTH / 2 - BRANCH_WIDTH :
-                            canvas.width / 2 + TREE_WIDTH / 2;
-                        ctx.drawImage(
-                            img,
-                            x,
-                            branchY,
-                            BRANCH_WIDTH,
-                            BRANCH_HEIGHT
-                        );
-                    } else {
-                        ctx.fillStyle = '#2ecc71';
-                        ctx.fillRect(
-                            branch.side === 'left' ?
-                                canvas.width / 2 - TREE_WIDTH / 2 - BRANCH_WIDTH :
-                                canvas.width / 2 + TREE_WIDTH / 2,
-                            branchY,
-                            BRANCH_WIDTH,
-                            BRANCH_HEIGHT
-                        );
-                    }
-                }
-            });
-        }
-
-        function generateSafeBranch() {
-            const dangerousSides = new Set();
-
-            branches.forEach(branch => {
-                if (branch.y === -LEVEL_HEIGHT) {
-                    dangerousSides.add(branch.side);
-                }
-            });
-
-            if (dangerousSides.size >= 2) return 'left';
-            if (dangerousSides.size === 1) return dangerousSides.has('left') ? 'right' : 'left';
-
-            const lastTwo = branches.slice(-2).map(b => b.side);
-            if (lastTwo.length === 2 && lastTwo[0] === lastTwo[1]) {
-                return lastTwo[0] === 'left' ? 'right' : 'left';
-            }
-
-            return Math.random() < 0.5 ? 'left' : 'right';
-        }
-
-        function checkCollision() {
-            const playerY = canvas.height - PLAYER_SIZE - 20;
-            return branches.some(branch => {
-                const branchBottom = branch.y + treeScroll + BRANCH_HEIGHT;
-                return (
-                    branch.side === playerSide &&
-                    branchBottom >= playerY &&
-                    (branch.y + treeScroll) <= playerY + PLAYER_SIZE
-                );
-            });
-        }
-
-        function handleMove(side) {
-            if (!isGameRunning) return;
-
-            playerSide = side;
-            treeScroll += LEVEL_HEIGHT;
-            addTime();
-
-            if (branches.every(b => b.y !== -treeScroll)) {
-                branches.push({
-                    side: generateSafeBranch(),
-                    y: -treeScroll - LEVEL_HEIGHT
-                });
-            }
-
-            if (checkCollision()) {
-                gameOver();
-                return;
-            }
-
-            branches = branches.filter(b => b.y + treeScroll < canvas.height + BRANCH_HEIGHT);
-
-            score++;
-            scoreElement.textContent = `Score: ${score}`;
-        }
-
-        function gameOver() {
-            isGameRunning = false;
-            startButton.disabled = false;
-            if (timerId) {
-                cancelAnimationFrame(timerId);
-                timerId = null;
-            }
-            alert(`Game Over! Score: ${score}`);
-        }
-
-        async function startGame() {
-            if (!images.tree || !images.branchLeft || !images.branchRight || !images.playerLeft || !images.playerRight) {
-                await loadImages();
-                loadBackgroundImage();
-            }
-
-            isGameRunning = true;
-            score = 0;
-            timeLeft = MAX_TIME;
-            speedMultiplier = 1.0;
-            treeScroll = 0;
-            playerSide = 'right';
-            branches = [];
-            scoreElement.textContent = `Score: ${score}`;
-            timerBar.style.width = '100%';
+        if (timeLeft < 0.3) {
+            timerBar.style.backgroundColor = '#e74c3c';
+        } else if (timeLeft < 0.6) {
+            timerBar.style.backgroundColor = '#f39c12';
+        } else {
             timerBar.style.backgroundColor = '#2ecc71';
-            startButton.disabled = true;
-
-            for (let i = 0; i < VISIBLE_LEVELS; i++) {
-                branches.push({
-                    side: generateSafeBranch(),
-                    y: -i * LEVEL_HEIGHT
-                });
-            }
-
-            if (timerId) cancelAnimationFrame(timerId);
-            timerId = requestAnimationFrame(updateTimer);
-
-            gameLoop();
         }
 
-        function gameLoop() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            if (backgroundImage) {
-                ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
-            } else {
-                ctx.fillStyle = '#87CEEB';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-            }
-
-            drawTree();
-            drawBranches();
-            drawPlayer();
-            if (isGameRunning) requestAnimationFrame(gameLoop);
+        if (timeLeft <= 0) {
+            gameOver();
+            return;
         }
 
-        // Обработчики событий
-        leftButton.addEventListener('click', () => handleMove('left'));
-        rightButton.addEventListener('click', () => handleMove('right'));
-        startButton.addEventListener('click', startGame);
+        timerId = requestAnimationFrame(updateTimer);
+    }
 
-        // Сенсорное управление
-        let touchStartX = 0;
+    function addTime() {
+        if (!isGameRunning) return;
+        timeLeft += TIME_BOOST / (1.0 + Math.floor(score / 20) * 0.5);
+        if (timeLeft > MAX_TIME) timeLeft = MAX_TIME;
+    }
 
-        canvas.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            touchStartX = e.touches[0].clientX;
-        });
+    function drawTree() {
+        if (images.tree) {
+            ctx.drawImage(
+                images.tree,
+                canvas.width / 2 - TREE_WIDTH / 2,
+                0,
+                TREE_WIDTH,
+                canvas.height
+            );
+        } else {
+            ctx.fillStyle = '#8b4513';
+            ctx.fillRect(
+                canvas.width / 2 - TREE_WIDTH / 2,
+                0,
+                TREE_WIDTH,
+                canvas.height
+            );
+        }
+    }
 
-        canvas.addEventListener('touchend', (e) => {
-            if (!isGameRunning) return;
+    function drawPlayer() {
+        const x = playerSide === 'left' ?
+            canvas.width / 2 - TREE_WIDTH / 2 - PLAYER_SIZE :
+            canvas.width / 2 + TREE_WIDTH / 2;
+        const y = canvas.height - PLAYER_SIZE - 20;
 
-            const touchEndX = e.changedTouches[0].clientX;
-            const diffX = touchEndX - touchStartX;
+        const img = playerSide === 'left' ? images.playerLeft : images.playerRight;
 
-            if (Math.abs(diffX) > 30) {
-                if (diffX > 0) {
-                    handleMove('right');
+        if (img) {
+            ctx.drawImage(img, x, y, PLAYER_SIZE, PLAYER_SIZE);
+        } else {
+            ctx.fillStyle = '#3498db';
+            ctx.fillRect(x, y, PLAYER_SIZE, PLAYER_SIZE);
+        }
+    }
+
+    function drawBranches() {
+        branches.forEach(branch => {
+            const branchY = branch.y + treeScroll;
+            if (branchY < canvas.height && branchY > -BRANCH_HEIGHT) {
+                const img = branch.side === 'left' ? images.branchLeft : images.branchRight;
+
+                if (img) {
+                    const x = branch.side === 'left' ?
+                        canvas.width / 2 - TREE_WIDTH / 2 - BRANCH_WIDTH :
+                        canvas.width / 2 + TREE_WIDTH / 2;
+                    ctx.drawImage(
+                        img,
+                        x,
+                        branchY,
+                        BRANCH_WIDTH,
+                        BRANCH_HEIGHT
+                    );
                 } else {
-                    handleMove('left');
+                    ctx.fillStyle = '#2ecc71';
+                    ctx.fillRect(
+                        branch.side === 'left' ?
+                            canvas.width / 2 - TREE_WIDTH / 2 - BRANCH_WIDTH :
+                            canvas.width / 2 + TREE_WIDTH / 2,
+                        branchY,
+                        BRANCH_WIDTH,
+                        BRANCH_HEIGHT
+                    );
                 }
             }
         });
+    }
 
-        // Обработка изменения размера
-        window.addEventListener('resize', resizeCanvas);
-        window.addEventListener('orientationchange', resizeCanvas);
+    function generateSafeBranch() {
+        const dangerousSides = new Set();
 
-        // Инициализация
-        resizeCanvas();
+        branches.forEach(branch => {
+            if (branch.y === -LEVEL_HEIGHT) {
+                dangerousSides.add(branch.side);
+            }
+        });
 
-        // Telegram Mini App расширение
-        if (window.Telegram && window.Telegram.WebApp) {
-            Telegram.WebApp.expand();
-            Telegram.WebApp.enableClosingConfirmation();
+        if (dangerousSides.size >= 2) return 'left';
+        if (dangerousSides.size === 1) return dangerousSides.has('left') ? 'right' : 'left';
+
+        const lastTwo = branches.slice(-2).map(b => b.side);
+        if (lastTwo.length === 2 && lastTwo[0] === lastTwo[1]) {
+            return lastTwo[0] === 'left' ? 'right' : 'left';
         }
-    </script>
+
+        return Math.random() < 0.5 ? 'left' : 'right';
+    }
+
+    function checkCollision() {
+        const playerY = canvas.height - PLAYER_SIZE - 20;
+        return branches.some(branch => {
+            const branchBottom = branch.y + treeScroll + BRANCH_HEIGHT;
+            return (
+                branch.side === playerSide &&
+                branchBottom >= playerY &&
+                (branch.y + treeScroll) <= playerY + PLAYER_SIZE
+            );
+        });
+    }
+
+    function handleMove(side) {
+        if (!isGameRunning) return;
+
+        playerSide = side;
+        treeScroll += LEVEL_HEIGHT;
+        addTime();
+
+        // Создаем частицы при ударе
+        const hitX = playerSide === 'left' ?
+            canvas.width / 2 - TREE_WIDTH / 2 - 10 :
+            canvas.width / 2 + TREE_WIDTH / 2 + 10;
+        const hitY = canvas.height - PLAYER_SIZE - 20 + PLAYER_SIZE / 2;
+
+        createParticles(hitX, hitY, 10, PARTICLE_TYPES.WOOD_CHIP);
+        if (Math.random() < 0.3) {
+            createParticles(hitX, hitY, 3, PARTICLE_TYPES.LEAF);
+        }
+
+        if (branches.every(b => b.y !== -treeScroll)) {
+            branches.push({
+                side: generateSafeBranch(),
+                y: -treeScroll - LEVEL_HEIGHT
+            });
+        }
+
+        if (checkCollision()) {
+            gameOver();
+            return;
+        }
+
+        branches = branches.filter(b => b.y + treeScroll < canvas.height + BRANCH_HEIGHT);
+
+        score++;
+        scoreElement.textContent = `Score: ${score}`;
+    }
+
+    function gameOver() {
+        isGameRunning = false;
+        startButton.disabled = false;
+        if (timerId) {
+            cancelAnimationFrame(timerId);
+            timerId = null;
+        }
+
+        // Создаем взрыв частиц при проигрыше
+        const playerX = playerSide === 'left' ?
+            canvas.width / 2 - TREE_WIDTH / 2 - PLAYER_SIZE / 2 :
+            canvas.width / 2 + TREE_WIDTH / 2 + PLAYER_SIZE / 2;
+        const playerY = canvas.height - PLAYER_SIZE - 20 + PLAYER_SIZE / 2;
+
+        createParticles(playerX, playerY, 30, PARTICLE_TYPES.WOOD_CHIP);
+        createParticles(playerX, playerY, 15, PARTICLE_TYPES.LEAF);
+
+        function showAlertAfterAnimation() {
+            if (particles.length > 0) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                if (backgroundImage) {
+                    ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+                } else {
+                    ctx.fillStyle = '#87CEEB';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                }
+                drawTree();
+                drawBranches();
+                drawPlayer();
+                updateParticles();
+                drawParticles();
+                requestAnimationFrame(showAlertAfterAnimation);
+            } else {
+                alert(`Game Over! Score: ${score}`);
+            }
+        }
+
+        showAlertAfterAnimation();
+    }
+
+    function animateButton(button) {
+        button.style.transform = 'scale(0.95)';
+        button.style.transition = 'transform 0.1s';
+        setTimeout(() => {
+            button.style.transform = 'scale(1)';
+        }, 100);
+    }
+
+    async function startGame() {
+        if (!images.tree || !images.branchLeft || !images.branchRight || !images.playerLeft || !images.playerRight) {
+            await loadImages();
+            loadBackgroundImage();
+        }
+
+        isGameRunning = true;
+        score = 0;
+        timeLeft = MAX_TIME;
+        speedMultiplier = 1.0;
+        treeScroll = 0;
+        playerSide = 'right';
+        branches = [];
+        particles.length = 0; // Очищаем частицы
+        scoreElement.textContent = `Score: ${score}`;
+        timerBar.style.width = '100%';
+        timerBar.style.backgroundColor = '#2ecc71';
+        startButton.disabled = true;
+
+        for (let i = 0; i < VISIBLE_LEVELS; i++) {
+            branches.push({
+                side: generateSafeBranch(),
+                y: -i * LEVEL_HEIGHT
+            });
+        }
+
+        if (timerId) cancelAnimationFrame(timerId);
+        timerId = requestAnimationFrame(updateTimer);
+
+        gameLoop();
+    }
+
+    function gameLoop() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        if (backgroundImage) {
+            ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+        } else {
+            ctx.fillStyle = '#87CEEB';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        drawTree();
+        drawBranches();
+        drawPlayer();
+        updateParticles();
+        drawParticles();
+
+        if (isGameRunning) requestAnimationFrame(gameLoop);
+    }
+
+    // Обработчики событий
+    leftButton.addEventListener('click', () => {
+        handleMove('left');
+        animateButton(leftButton);
+    });
+    rightButton.addEventListener('click', () => {
+        handleMove('right');
+        animateButton(rightButton);
+    });
+    startButton.addEventListener('click', startGame);
+
+    // Сенсорное управление
+    let touchStartX = 0;
+
+    canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        touchStartX = e.touches[0].clientX;
+    });
+
+    canvas.addEventListener('touchend', (e) => {
+        if (!isGameRunning) return;
+
+        const touchEndX = e.changedTouches[0].clientX;
+        const diffX = touchEndX - touchStartX;
+
+        if (Math.abs(diffX) > 30) {
+            if (diffX > 0) {
+                handleMove('right');
+                animateButton(rightButton);
+            } else {
+                handleMove('left');
+                animateButton(leftButton);
+            }
+        }
+    });
+
+    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('orientationchange', resizeCanvas);
+
+    resizeCanvas();
+
+    if (window.Telegram && window.Telegram.WebApp) {
+        Telegram.WebApp.expand();
+        Telegram.WebApp.enableClosingConfirmation();
+    }
+</script>
 </body>
 
 </html>
