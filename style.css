@@ -1,112 +1,119 @@
 * {
-            box-sizing: border-box;
-        }
+    box-sizing: border-box;
+}
 
-        body {
-            overflow: hidden;
-            height: 100vh;
-            width: 100vw;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: space-between;
-            background-color: #f0f0f0;
-            margin: 0;
-            padding: 10px 0;
-            touch-action: manipulation;
-            font-family: Arial, sans-serif;
-        }
+body {
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #f0f0f0;
+    margin: 0;
+    padding: 10px 0;
+    touch-action: manipulation;
+    font-family: Arial, sans-serif;
+}
 
-        #gameContainer {
-            position: relative;
-            width: 100%;
-            max-width: 400px;
-            aspect-ratio: 2/3;
-            margin: 0 auto;
-            flex-grow: 1;
-        }
+#gameContainer {
+    position: relative;
+    width: 100%;
+    max-width: 400px;
+    max-height: calc(100vh - 250px); /* Оставляет место для других элементов */
+    aspect-ratio: 2/3;
+    margin: auto 0; /* Центрирует по вертикали */
+    flex-shrink: 0;
+}
 
-        #gameCanvas {
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
+#gameCanvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    margin: auto;
+}
 
-        #controls {
-            display: flex;
-            gap: 10px;
-            width: 100%;
-            max-width: 400px;
-            justify-content: space-between;
-            padding: 10px;
-            margin-bottom: 10px;
-        }
+#controls {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+    max-width: 400px;
+    justify-content: space-between;
+    padding: 10px;
+    margin-bottom: 10px;
+    flex-shrink: 0;
+}
 
-        button {
-            padding: 12px 20px;
-            font-size: 16px;
-            cursor: pointer;
-            border: none;
-            border-radius: 8px;
-            background-color: #3498db;
-            color: white;
-            flex-grow: 1;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            min-height: 50px;
-        }
+button {
+    padding: 12px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    border: none;
+    border-radius: 8px;
+    background-color: #3498db;
+    color: white;
+    flex-grow: 1;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    min-height: 50px;
+}
 
-        #startButton {
-            background-color: #2ecc71;
-            margin: 10px 0;
-            width: 100%;
-            max-width: 400px;
-        }
+#startButton {
+    background-color: #2ecc71;
+    margin: 10px 0;
+    width: 100%;
+    max-width: 400px;
+    flex-shrink: 0;
+}
 
-        #score {
-            font-size: 20px;
-            font-weight: bold;
-            margin: 5px 0;
-            text-align: center;
-        }
+#score {
+    font-size: 20px;
+    font-weight: bold;
+    margin: 5px 0;
+    text-align: center;
+    flex-shrink: 0;
+}
 
-        #timerContainer {
-            width: 100%;
-            max-width: 400px;
-            height: 15px;
-            background-color: #ddd;
-            border-radius: 8px;
-            margin: 5px 0;
-            overflow: hidden;
-        }
+#timerContainer {
+    width: 100%;
+    max-width: 400px;
+    height: 15px;
+    background-color: #ddd;
+    border-radius: 8px;
+    margin: 5px 0;
+    overflow: hidden;
+    flex-shrink: 0;
+}
 
-        #timerBar {
-            height: 100%;
-            width: 100%;
-            background-color: #e74c3c;
-            transition: width 0.1s linear;
-        }
+#timerBar {
+    height: 100%;
+    width: 100%;
+    background-color: #e74c3c;
+    transition: width 0.1s linear;
+}
 
-        .info-container {
-            width: 100%;
-            max-width: 400px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 0 10px;
-        }
+.info-container {
+    width: 100%;
+    max-width: 400px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 10px;
+    flex-shrink: 0;
+}
 
-        @media (max-height: 700px) {
-            #gameContainer {
-                max-height: 60vh;
-            }
-            
-            button {
-                padding: 8px 12px;
-                font-size: 14px;
-                min-height: 40px;
-            }
-            
-            #score {
-                font-size: 18px;
-            }
-        }
+@media (max-height: 700px) {
+    #gameContainer {
+        max-height: calc(100vh - 200px); /* Уменьшаем пространство для других элементов */
+    }
+    
+    button {
+        padding: 8px 12px;
+        font-size: 14px;
+        min-height: 40px;
+    }
+    
+    #score {
+        font-size: 18px;
+    }
+}
