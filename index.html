@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LumberJack</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+
+<div id="uiOverlay">
+    <div id="scoreContainer">Score: 0</div>
+    <div id="timerContainer">
+        <div id="timerBar"></div>
+    </div>
+</div>
+
+<button id="startButton" class="image-button"></button>
+
+<div id="controls">
+    <button id="leftButton" class="image-button"></button>
+    <button id="rightButton" class="image-button"></button>
+</div>
+
+<div id="gameOverScreen">
+    <h1>GAME OVER</h1>
+    <p id="finalScore">Score: 0</p>
+    <img id="ahunsitImage" src="ahunsit.png" alt="Ahun sits" style="display: none; max-width: 200px; margin-bottom: 20px;">
+    <div style="display: flex; gap: 15px; pointer-events: auto;">
+        <button id="restartButton" class="image-button"></button>
+    </div>
+</div>
+
+<script src="main.js"></script>
+</body>
+</html>
