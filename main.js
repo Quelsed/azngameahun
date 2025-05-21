@@ -104,15 +104,15 @@ const TIME_BOOST = 0.3;
 const SCROLL_EASING = 0.2;
 const MAX_TIME = 1.0;
 
-let isTelegram = false;
-
 let BRANCH_WIDTH;
 let BRANCH_HEIGHT;
 let TREE_WIDTH;
 let PLAYER_SIZE;
 let LEVEL_HEIGHT;
-let VISIBLE_LEVELS = 1;
+let VISIBLE_LEVELS = 2;
 let targetTreeScroll = 0;
+
+let isTelegram = false;
 
 function updateGameSettings() {
     const scaleFactor = canvas.width / 400;
@@ -191,7 +191,7 @@ function drawPlayer() {
         x = playerSide === 'left' ?
             canvas.width / 2 - TREE_WIDTH / 2 - PLAYER_SIZE :
             canvas.width / 2 + TREE_WIDTH / 2;
-        y = canvas.height - PLAYER_SIZE - 120;
+        y = canvas.height - PLAYER_SIZE - 80;
 
         const img = playerSide === 'left' ? images.playerLeft : images.playerRight;
 
@@ -306,7 +306,7 @@ function drawFallingBranches() {
 
 function drawBranches() {
     const BRANCH_OFFSET = 130; // Новое значение отступа от дерева (было BRANCH_WIDTH)
-    
+
     branches.forEach(branch => {
         const branchY = branch.y + treeScroll - 80;
         if (branchY < canvas.height && branchY > -BRANCH_HEIGHT) {
@@ -363,7 +363,6 @@ function checkCollision() {
     const playerHeadY = playerY + PLAYER_SIZE * 0.2;
     const playerHeadHeight = PLAYER_SIZE * 0.3;
 
-    // Проверяем ветки на текущем уровне
     const branchAtPlayerLevel = branches.find(branch => {
         const branchYPos = branch.y + treeScroll;
         const branchBottom = branchYPos + BRANCH_HEIGHT;
@@ -375,19 +374,7 @@ function checkCollision() {
         );
     });
 
-    // Проверяем ветки на следующем уровне (если игрок только что срубил ветку)
-    const branchAtNextLevel = branches.find(branch => {
-        const branchYPos = branch.y + treeScroll + LEVEL_HEIGHT;
-        const branchBottom = branchYPos + BRANCH_HEIGHT;
-
-        return (
-            branchBottom >= playerHeadY &&
-            branchYPos <= playerHeadY + playerHeadHeight &&
-            branch.side === playerSide
-        );
-    });
-
-    return !!branchAtPlayerLevel || !!branchAtNextLevel;
+    return !!branchAtPlayerLevel;
 }
 
 function handleMove(side) {
@@ -401,7 +388,7 @@ function handleMove(side) {
     };
 
     playerSide = side;
-    targetTreeScroll += LEVEL_HEIGHT+40;
+    targetTreeScroll += LEVEL_HEIGHT;
     addTime();
 
     if (checkCollision()) {
@@ -422,43 +409,21 @@ function handleMove(side) {
         return branchBottom >= playerY && (branch.y + treeScroll + LEVEL_HEIGHT) <= playerY + PLAYER_SIZE;
     });
 
-    if (branchAtPlayerLevel) {
-        if (branchAtPlayerLevel.side !== playerSide) {
-            // Срубаем ветку
-            const x = branchAtPlayerLevel.side === 'left' ?
-                canvas.width / 2 - TREE_WIDTH / 2 - BRANCH_WIDTH :
-                canvas.width / 2 + TREE_WIDTH / 2;
+    if (branchAtPlayerLevel && branchAtPlayerLevel.side !== playerSide) {
+        const x = branchAtPlayerLevel.side === 'left' ?
+            canvas.width / 2 - TREE_WIDTH / 2 - BRANCH_WIDTH :
+            canvas.width / 2 + TREE_WIDTH / 2;
 
-            fallingBranches.push({
-                side: branchAtPlayerLevel.side,
-                x: x,
-                y: branchAtPlayerLevel.y + treeScroll + LEVEL_HEIGHT,
-                rotation: 0,
-                rotationSpeed: (Math.random() - 0.5) * 0.2
-            });
+        fallingBranches.push({
+            side: branchAtPlayerLevel.side,
+            x: x,
+            y: branchAtPlayerLevel.y + treeScroll + LEVEL_HEIGHT,
+            rotation: 0,
+            rotationSpeed: (Math.random() - 0.5) * 0.2
+        });
 
-            createParticles(x, branchAtPlayerLevel.y + treeScroll + LEVEL_HEIGHT, branchAtPlayerLevel.side);
-            branches = branches.filter(b => b !== branchAtPlayerLevel);
-
-            // Проверяем, есть ли теперь опасная ветка на следующем уровне
-            const nextLevelBranch = branches.find(b => 
-                b.y + treeScroll + LEVEL_HEIGHT * 2 >= playerY && 
-                b.y + treeScroll + LEVEL_HEIGHT * 2 <= playerY + PLAYER_SIZE
-            );
-
-            if (nextLevelBranch && nextLevelBranch.side === playerSide) {
-                // Игрок идет в сторону оставшейся ветки - проигрыш
-                createParticles(
-                    playerSide === 'left' ?
-                        canvas.width / 2 - TREE_WIDTH / 2 - PLAYER_SIZE :
-                        canvas.width / 2 + TREE_WIDTH / 2,
-                    canvas.height - PLAYER_SIZE - 80,
-                    playerSide
-                );
-                gameOver();
-                return;
-            }
-        }
+        createParticles(x, branchAtPlayerLevel.y + treeScroll + LEVEL_HEIGHT, branchAtPlayerLevel.side);
+        branches = branches.filter(b => b !== branchAtPlayerLevel);
     }
 
     if (branches.every(b => b.y !== -targetTreeScroll)) {
@@ -483,7 +448,7 @@ function gameOver() {
         playerFallProgress += 0.05;
         if (playerFallProgress >= 1) {
             playerFallProgress = 1;
-            // УДАЛИТЬ ЭТУ СТРОКУ: startButton.classList.remove('hidden');
+            startButton.classList.remove('hidden');
             if (timerId) {
                 cancelAnimationFrame(timerId);
                 timerId = null;
@@ -613,6 +578,5 @@ resizeCanvas();
 if (window.Telegram && window.Telegram.WebApp) {
     Telegram.WebApp.ready();
     Telegram.WebApp.expand();
-    
-}
 
+}
