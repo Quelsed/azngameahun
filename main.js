@@ -191,7 +191,7 @@ function drawPlayer() {
         x = playerSide === 'left' ?
             canvas.width / 2 - TREE_WIDTH / 2 - PLAYER_SIZE :
             canvas.width / 2 + TREE_WIDTH / 2;
-        y = canvas.height - PLAYER_SIZE - 80;
+        y = canvas.height - PLAYER_SIZE - 150;
 
         const img = playerSide === 'left' ? images.playerLeft : images.playerRight;
 
@@ -368,7 +368,7 @@ function checkCollision() {
         const branchBottom = branchYPos + BRANCH_HEIGHT;
 
         return (
-            branchBottom >= playerHeadY &&
+            (branchBottom + 50) >= playerHeadY &&
             branchYPos <= playerHeadY + playerHeadHeight &&
             branch.side === playerSide
         );
@@ -403,29 +403,36 @@ function handleMove(side) {
         return;
     }
 
-    const playerY = canvas.height - PLAYER_SIZE - 20;
-    const branchAtPlayerLevel = branches.find(branch => {
-        const branchBottom = branch.y + treeScroll + LEVEL_HEIGHT + BRANCH_HEIGHT;
-        return branchBottom >= playerY && (branch.y + treeScroll + LEVEL_HEIGHT) <= playerY + PLAYER_SIZE;
+    const playerY = canvas.height - PLAYER_SIZE - 80;
+    
+    // Новая логика: проверяем все ветки, которые теперь находятся ниже игрока
+    const branchesToBreak = branches.filter(branch => {
+        const branchScreenY = branch.y + targetTreeScroll;
+        const branchBottom = branchScreenY + BRANCH_HEIGHT;
+        return branchBottom > (playerY + 150) && branch.side !== playerSide;
     });
 
-    if (branchAtPlayerLevel && branchAtPlayerLevel.side !== playerSide) {
-        const x = branchAtPlayerLevel.side === 'left' ?
+    // Добавляем сломанные ветки в fallingBranches
+    branchesToBreak.forEach(branch => {
+        const x = branch.side === 'left' ?
             canvas.width / 2 - TREE_WIDTH / 2 - BRANCH_WIDTH :
             canvas.width / 2 + TREE_WIDTH / 2;
-
+        
         fallingBranches.push({
-            side: branchAtPlayerLevel.side,
+            side: branch.side,
             x: x,
-            y: branchAtPlayerLevel.y + treeScroll + LEVEL_HEIGHT,
+            y: branch.y + targetTreeScroll,
             rotation: 0,
             rotationSpeed: (Math.random() - 0.5) * 0.2
         });
+        
+        createParticles(x, branch.y + targetTreeScroll, branch.side);
+    });
 
-        createParticles(x, branchAtPlayerLevel.y + treeScroll + LEVEL_HEIGHT, branchAtPlayerLevel.side);
-        branches = branches.filter(b => b !== branchAtPlayerLevel);
-    }
+    // Удаляем сломанные ветки из основного массива
+    branches = branches.filter(branch => !branchesToBreak.includes(branch));
 
+    // Генерируем новую безопасную ветку
     if (branches.every(b => b.y !== -targetTreeScroll)) {
         branches.push({
             side: generateSafeBranch(),
