@@ -448,7 +448,8 @@ function gameOver() {
         playerFallProgress += 0.05;
         if (playerFallProgress >= 1) {
             playerFallProgress = 1;
-            startButton.classList.remove('hidden');
+            // Удалите эту строку, чтобы кнопка старта не показывалась
+            // startButton.classList.remove('hidden');
             if (timerId) {
                 cancelAnimationFrame(timerId);
                 timerId = null;
@@ -473,6 +474,7 @@ function gameOver() {
 
     animateFall();
 }
+
 
 async function startGame() {
     if (!images.tree || !images.branchLeft || !images.branchRight || !images.playerLeft || !images.playerRight) {
