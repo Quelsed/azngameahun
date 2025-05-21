@@ -361,7 +361,7 @@ function generateSafeBranch() {
 function checkCollision() {
     const playerY = canvas.height - PLAYER_SIZE - 100;
     const playerHeadY = playerY + PLAYER_SIZE * 0.2;
-    const playerHeadHeight = PLAYER_SIZE * 0.3;
+    const playerHeadHeight = PLAYER_SIZE * 0.5;
 
     const branchAtPlayerLevel = branches.find(branch => {
         const branchYPos = branch.y + treeScroll;
