@@ -358,23 +358,36 @@ function generateSafeBranch() {
     return Math.random() < 0.5 ? 'left' : 'right';
 }
 
-function checkCollision() {
+function checkCollision(side = playerSide) {
     const playerY = canvas.height - PLAYER_SIZE - 100;
     const playerHeadY = playerY + PLAYER_SIZE * 0.2;
     const playerHeadHeight = PLAYER_SIZE * 0.3;
 
+    // Проверяем ветки на текущем уровне
     const branchAtPlayerLevel = branches.find(branch => {
         const branchYPos = branch.y + treeScroll;
         const branchBottom = branchYPos + BRANCH_HEIGHT;
 
         return (
-            (branchBottom + 50) >= playerHeadY &&
+            branchBottom >= playerHeadY &&
             branchYPos <= playerHeadY + playerHeadHeight &&
-            branch.side === playerSide
+            branch.side === side
         );
     });
 
-    return !!branchAtPlayerLevel;
+    // Проверяем ветки на следующем уровне
+    const branchAtNextLevel = branches.find(branch => {
+        const branchYPos = branch.y + treeScroll + LEVEL_HEIGHT;
+        const branchBottom = branchYPos + BRANCH_HEIGHT;
+
+        return (
+            branchBottom >= playerHeadY &&
+            branchYPos <= playerHeadY + playerHeadHeight &&
+            branch.side === side
+        );
+    });
+
+    return !!branchAtPlayerLevel || !!branchAtNextLevel;
 }
 
 function handleMove(side) {
@@ -558,34 +571,58 @@ document.getElementById('restartButton').addEventListener('click', () => {
     startGame();
 });
 
-// Touch controls
+// Улучшенная обработка касаний для работы в mini-app
 let touchStartX = 0;
+let touchStartTime = 0;
+const TOUCH_THRESHOLD = 30;
+const TOUCH_TIME_THRESHOLD = 300;
+
 canvas.addEventListener('touchstart', (e) => {
     e.preventDefault();
     touchStartX = e.touches[0].clientX;
-});
+    touchStartTime = Date.now();
+}, { passive: false });
 
 canvas.addEventListener('touchend', (e) => {
-    if (!isGameRunning) return;
+    if (!isGameRunning || isPlayerDead) return;
+    e.preventDefault();
 
     const touchEndX = e.changedTouches[0].clientX;
     const diffX = touchEndX - touchStartX;
+    const touchDuration = Date.now() - touchStartTime;
 
-    if (Math.abs(diffX) > 30) {
+    // Учитываем только быстрые свайпы
+    if (touchDuration < TOUCH_TIME_THRESHOLD && Math.abs(diffX) > TOUCH_THRESHOLD) {
         if (diffX > 0) {
             handleMove('right');
         } else {
             handleMove('left');
         }
     }
+}, { passive: false });
+
+// Добавляем обработку клавиатуры для тестирования
+document.addEventListener('keydown', (e) => {
+    if (!isGameRunning || isPlayerDead) return;
+    
+    if (e.key === 'ArrowLeft') {
+        handleMove('left');
+    } else if (e.key === 'ArrowRight') {
+        handleMove('right');
+    }
 });
 
-// Initialize
+// Инициализация
 resizeCanvas();
 
 // Инициализация Telegram WebApp
 if (window.Telegram && window.Telegram.WebApp) {
+    isTelegram = true;
     Telegram.WebApp.ready();
     Telegram.WebApp.expand();
-
+    
+    // Скрываем кнопку старта, если игра запущена из Telegram
+    startButton.style.display = 'none';
+    document.getElementById('gameOverScreen').style.display = 'none';
+    startGame();
 }
