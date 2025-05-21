@@ -32,6 +32,7 @@ const FALLING_SPEED = 5;
 const PARTICLE_COUNT = 10;
 const HEAD_HEIGHT = 0.3;
 
+
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const startButton = document.getElementById('startButton');
@@ -40,6 +41,7 @@ const timerBar = document.getElementById('timerBar');
 const leftButton = document.getElementById('leftButton');
 const rightButton = document.getElementById('rightButton');
 let highScore = localStorage.getItem('highScore') || 0;
+
 
 const IMAGE_PATHS = {
     tree: 'tree.png',
@@ -112,7 +114,6 @@ let LEVEL_HEIGHT;
 let VISIBLE_LEVELS = 2;
 let targetTreeScroll = 0;
 
-let isTelegram = false;
 
 function updateGameSettings() {
     const scaleFactor = canvas.width / 400;
@@ -579,12 +580,36 @@ canvas.addEventListener('touchend', (e) => {
     }
 });
 
-// Initialize
-resizeCanvas();
+// Простая проверка на Telegram WebApp
+let isTelegram = false;
+try {
+  isTelegram = !!window.Telegram?.WebApp;
+} catch (e) {
+  isTelegram = false;
+}
 
-// Инициализация Telegram WebApp
-if (window.Telegram && window.Telegram.WebApp) {
-    Telegram.WebApp.ready();
-    Telegram.WebApp.expand();
+// Инициализация игры
+function initGame() {
+  // Настройка канваса
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
 
+  // Остальной код игры...
+  console.log('Игра инициализирована!');
+  console.log('Telegram mode:', isTelegram);
+}
+
+// Запуск после загрузки страницы
+if (document.readyState === 'complete') {
+  initGame();
+} else {
+  window.addEventListener('load', initGame);
 }
