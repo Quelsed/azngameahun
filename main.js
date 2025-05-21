@@ -191,7 +191,7 @@ function drawPlayer() {
         x = playerSide === 'left' ?
             canvas.width / 2 - TREE_WIDTH / 2 - PLAYER_SIZE :
             canvas.width / 2 + TREE_WIDTH / 2;
-        y = canvas.height - PLAYER_SIZE - 130;
+        y = canvas.height - PLAYER_SIZE - 120;
 
         const img = playerSide === 'left' ? images.playerLeft : images.playerRight;
 
