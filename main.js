@@ -32,7 +32,6 @@ const FALLING_SPEED = 5;
 const PARTICLE_COUNT = 10;
 const HEAD_HEIGHT = 0.3;
 
-
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const startButton = document.getElementById('startButton');
@@ -41,7 +40,6 @@ const timerBar = document.getElementById('timerBar');
 const leftButton = document.getElementById('leftButton');
 const rightButton = document.getElementById('rightButton');
 let highScore = localStorage.getItem('highScore') || 0;
-
 
 const IMAGE_PATHS = {
     tree: 'tree.png',
@@ -114,6 +112,7 @@ let LEVEL_HEIGHT;
 let VISIBLE_LEVELS = 2;
 let targetTreeScroll = 0;
 
+let isTelegram = false;
 
 function updateGameSettings() {
     const scaleFactor = canvas.width / 400;
@@ -365,7 +364,7 @@ function checkCollision() {
     const playerHeadHeight = PLAYER_SIZE * 0.3;
 
     const branchAtPlayerLevel = branches.find(branch => {
-        const branchYPos = branch.y + targetTreeScroll;
+        const branchYPos = branch.y + treeScroll;
         const branchBottom = branchYPos + BRANCH_HEIGHT;
 
         return (
@@ -389,9 +388,9 @@ function handleMove(side) {
     };
 
     playerSide = side;
+    targetTreeScroll += LEVEL_HEIGHT;
     addTime();
 
-    // Проверяем столкновение с веткой на ТЕКУЩЕМ уровне (перед перемещением)
     if (checkCollision()) {
         createParticles(
             playerSide === 'left' ?
@@ -404,42 +403,36 @@ function handleMove(side) {
         return;
     }
 
-    // Ищем ветку на ТЕКУЩЕМ уровне (которая сейчас уходит вниз)
-    const currentLevelY = targetTreeScroll;
-    const branchAtCurrentLevel = branches.find(branch => {
-        return Math.abs(branch.y + currentLevelY - (canvas.height - PLAYER_SIZE - 80)) < LEVEL_HEIGHT/2;
+    const playerY = canvas.height - PLAYER_SIZE - 20;
+    const branchAtPlayerLevel = branches.find(branch => {
+        const branchBottom = branch.y + treeScroll + LEVEL_HEIGHT + BRANCH_HEIGHT;
+        return branchBottom >= playerY && (branch.y + treeScroll + LEVEL_HEIGHT) <= playerY + PLAYER_SIZE;
     });
 
-    // Если нашли ветку с противоположной стороны - рубим ее
-    if (branchAtCurrentLevel && branchAtCurrentLevel.side !== playerSide) {
-        const x = branchAtCurrentLevel.side === 'left' ?
+    if (branchAtPlayerLevel && branchAtPlayerLevel.side !== playerSide) {
+        const x = branchAtPlayerLevel.side === 'left' ?
             canvas.width / 2 - TREE_WIDTH / 2 - BRANCH_WIDTH :
             canvas.width / 2 + TREE_WIDTH / 2;
 
         fallingBranches.push({
-            side: branchAtCurrentLevel.side,
+            side: branchAtPlayerLevel.side,
             x: x,
-            y: branchAtCurrentLevel.y + currentLevelY,
+            y: branchAtPlayerLevel.y + treeScroll + LEVEL_HEIGHT,
             rotation: 0,
             rotationSpeed: (Math.random() - 0.5) * 0.2
         });
 
-        createParticles(x, branchAtCurrentLevel.y + currentLevelY, branchAtCurrentLevel.side);
-        branches = branches.filter(b => b !== branchAtCurrentLevel);
+        createParticles(x, branchAtPlayerLevel.y + treeScroll + LEVEL_HEIGHT, branchAtPlayerLevel.side);
+        branches = branches.filter(b => b !== branchAtPlayerLevel);
     }
 
-    // Перемещаем игрока вниз
-    targetTreeScroll += LEVEL_HEIGHT;
-
-    // Генерируем новую ветку на два уровня выше
-    if (branches.every(b => b.y !== -targetTreeScroll - LEVEL_HEIGHT)) {
+    if (branches.every(b => b.y !== -targetTreeScroll)) {
         branches.push({
             side: generateSafeBranch(),
             y: -targetTreeScroll - LEVEL_HEIGHT
         });
     }
 
-    // Удаляем ветки, которые ушли за пределы экрана
     branches = branches.filter(b => b.y + treeScroll < canvas.height + BRANCH_HEIGHT);
 
     score++;
@@ -580,36 +573,12 @@ canvas.addEventListener('touchend', (e) => {
     }
 });
 
-// Простая проверка на Telegram WebApp
-let isTelegram = false;
-try {
-  isTelegram = !!window.Telegram?.WebApp;
-} catch (e) {
-  isTelegram = false;
-}
+// Initialize
+resizeCanvas();
 
-// Инициализация игры
-function initGame() {
-  // Настройка канваса
-  const canvas = document.getElementById('gameCanvas');
-  const ctx = canvas.getContext('2d');
-  
-  function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-  }
-  
-  window.addEventListener('resize', resizeCanvas);
-  resizeCanvas();
+// Инициализация Telegram WebApp
+if (window.Telegram && window.Telegram.WebApp) {
+    Telegram.WebApp.ready();
+    Telegram.WebApp.expand();
 
-  // Остальной код игры...
-  console.log('Игра инициализирована!');
-  console.log('Telegram mode:', isTelegram);
-}
-
-// Запуск после загрузки страницы
-if (document.readyState === 'complete') {
-  initGame();
-} else {
-  window.addEventListener('load', initGame);
 }
